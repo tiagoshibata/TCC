@@ -1,13 +1,12 @@
 """Based on: https://github.com/pypa/sampleproject."""
-
-from setuptools import find_packages, setup
 from os import path
+from setuptools import find_packages, setup
 
 # Get the long description from the README file
 with open(path.join(path.abspath(path.dirname(__file__)), 'README.rst')) as f:
     long_description = f.read()
 
-tests_require = ['flake8', 'pytest', 'pytest-flake8', 'pytest-cov']
+tests_require = ['pylint', 'pytest', 'pytest-pylint', 'pytest-cov']
 setup(
     name='TODO',
 
