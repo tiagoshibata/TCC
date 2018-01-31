@@ -1,5 +1,5 @@
-To create a new virtual environment: ```python3 -m venv venv```
+# TCC
 
-To enter the virtual environment: ```source venv/bin/activate```
+## Running in a venv
 
-To install project's dependencies: ```pip install -r requirements.txt``` (from frozen versions) or ```pip install .```
+The `activate_venv.py` script can be used to run commands inside a virtual environment. Run `./activate_venv.py bash` to start a `bash` shell inside a venv, or `./activate_venv.py python` to start `python`.
