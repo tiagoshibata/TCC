@@ -1,0 +1,44 @@
+[MASTER]
+jobs=4
+
+[MESSAGES CONTROL]
+disable=
+    bad-function,
+    missing-docstring,
+    no-member,
+
+[REPORTS]
+# Available formats are text, parseable, colorized, msvs (visual studio) and html.
+# You can also give a reporter class, eg mypackage.mymodule.MyReporterClass.
+output-format=colorized
+
+# Full report or only messages
+reports=no
+
+[FORMAT]
+max-line-length=120
+
+[BASIC]
+# Regular expression matching correct function names
+function-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# Regular expression matching correct variable names
+variable-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# Regular expression matching correct constant names
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+
+# Regular expression matching correct attribute names
+attr-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# Regular expression matching correct argument names
+argument-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# Regular expression matching correct class attribute names
+class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{0,30}|(__.*__))$
+
+# Regular expression matching correct inline iteration names
+inlinevar-rgx=[A-Za-z_][A-Za-z0-9_]*$
+
+# Regular expression matching correct class names
+class-rgx=[A-Z_][a-zA-Z0-9]*$
