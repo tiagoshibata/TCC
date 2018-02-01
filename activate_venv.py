@@ -8,7 +8,7 @@ import venv
 
 def parse_environment(environment):
     key_values = [x.partition('=') for x in environment.splitlines()]
-    return {key: value for key, _, value in key_values}
+    return {key: value for key, _, value in key_values if key}
 
 
 def main(target_command):
