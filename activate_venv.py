@@ -21,6 +21,7 @@ def main(target_command):
     os.environ.update(parse_environment(environment))
 
     subprocess.check_call(['pip', 'install', '-r', base_dir / 'requirements.txt'])
+    subprocess.check_call(['pip', 'install', '-e', base_dir])
 
     os.execvp(target_command[0], target_command)
 
