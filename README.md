@@ -1,4 +1,4 @@
-# TCC
+# ColorMotion
 
 ## Running in a venv
 

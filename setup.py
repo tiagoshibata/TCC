@@ -18,7 +18,7 @@ setup(
     description='Automatic colorization of video using deep learning.',
     long_description=long_description,
 
-    url='https://github.com/tiagoshibata/ColorMotion',
+    url='https://github.com/ColorMotion/ColorMotion',
 
     author='Tiago Koji Castro Shibata',
     author_email='tiago.shibata@gmail.org',

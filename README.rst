@@ -1,4 +1,4 @@
-TCC
+ColorMotion
 ===
 
-See https://github.com/tiagoshibata/TCC.
+See https://github.com/ColorMotion/ColorMotion.
