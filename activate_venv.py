@@ -14,7 +14,11 @@ def main(target_command):
 
     bash_source(base_dir / 'venv/bin/activate')
 
-    subprocess.check_call(['pip', 'install', '-r', base_dir / 'requirements.txt'])
+    requirements = base_dir / 'requirements.txt'
+    if requirements.exists():
+        subprocess.check_call(['pip', 'install', '-r', requirements])
+    else:
+        print('No requirements.txt file found, installing latest versions')
     subprocess.check_call(['pip', 'install', '-e', base_dir])
 
     os.execvp(target_command[0], target_command)
