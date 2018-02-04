@@ -5,20 +5,14 @@ import sys
 import subprocess
 import venv
 
-
-def parse_environment(environment):
-    key_values = [x.partition('=') for x in environment.splitlines()]
-    return {key: value for key, _, value in key_values if key}
+from colormotion.environment import bash_source
 
 
 def main(target_command):
     base_dir = Path(__file__).resolve().parent
     venv.create(base_dir / 'venv', with_pip=True)
 
-    environment = subprocess.check_output([
-        'bash', '-c', 'source {} && env'.format(base_dir / 'venv/bin/activate')
-    ], universal_newlines=True)
-    os.environ.update(parse_environment(environment))
+    bash_source(base_dir / 'venv/bin/activate')
 
     subprocess.check_call(['pip', 'install', '-r', base_dir / 'requirements.txt'])
     subprocess.check_call(['pip', 'install', '-e', base_dir])

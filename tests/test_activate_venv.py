@@ -1,5 +1,6 @@
-import TODO.activate_venv as activate_venv
 import pytest
+
+from colormotion.environment import parse_environment
 
 
 @pytest.mark.parametrize('environment,expected_dict', [
@@ -15,4 +16,4 @@ import pytest
     ),
 ])
 def test_parse_environment(environment, expected_dict):
-    assert activate_venv.parse_environment(environment) == expected_dict
+    assert parse_environment(environment) == expected_dict

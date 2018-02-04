@@ -6,19 +6,19 @@ from setuptools import find_packages, setup
 with open(path.join(path.abspath(path.dirname(__file__)), 'README.rst')) as f:
     long_description = f.read()
 
-tests_require = ['pylint', 'pytest', 'pytest-pylint', 'pytest-cov']
+TESTS_REQUIRE = ['pylint', 'pytest', 'pytest-pylint']
 setup(
-    name='TODO',
+    name='colormotion',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.1',
 
-    description='TODO',
+    description='Automatic colorization of video using deep learning.',
     long_description=long_description,
 
-    url='https://github.com/tiagoshibata/TODO',
+    url='https://github.com/tiagoshibata/ColorMotion',
 
     author='Tiago Koji Castro Shibata',
     author_email='tiago.shibata@gmail.org',
@@ -36,7 +36,7 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
 
-    keywords='TODO TODO2',
+    keywords='graphics video colorization deeplearning',
 
     packages=find_packages(),
 
@@ -48,11 +48,11 @@ setup(
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    extras_require={'test': tests_require},
+    extras_require={'test': TESTS_REQUIRE},
 
     setup_requires=['pytest-runner'],
 
-    tests_require=tests_require,
+    TESTS_REQUIRE=TESTS_REQUIRE,
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.
