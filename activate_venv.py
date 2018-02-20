@@ -11,7 +11,7 @@ from colormotion.environment import bash_source
 
 def main(args):
     base_dir = Path(__file__).resolve().parent
-    venv.create(base_dir / 'venv', with_pip=True)
+    venv.create(base_dir / 'venv', system_site_packages=True, with_pip=True)
 
     bash_source(base_dir / 'venv/bin/activate')
 
