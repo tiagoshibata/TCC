@@ -20,14 +20,15 @@ def main(args):
         subprocess.check_call(['pip', 'install', '-r', requirements])
     else:
         print('No requirements.txt file found, installing latest versions')
-    subprocess.check_call(['pip', 'install', '-e', base_dir])
+    subprocess.check_call(['pip', 'install', '-e', '{}[test]'.format(base_dir)])
 
     os.execvp(args.command[0], args.command)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Activates a venv for the project.')
-    parser.add_argument('command', nargs='+', help='command to execute in the venv, with optional arguments', default='/bin/sh')
+    parser.add_argument('command', nargs='+', default='/bin/sh',
+                        help='command to execute in the venv, with optional arguments')
     return parser.parse_args()
 
 

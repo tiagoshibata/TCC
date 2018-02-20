@@ -2,7 +2,6 @@
 import argparse
 import hashlib
 from pathlib import Path
-import sys
 
 import ffmpy
 
@@ -26,7 +25,7 @@ def main(args):
     file_hash = hash_file(args.source)
     destination = Path(args.destination) / file_hash
     destination.mkdir()  # throws if already exists
-    output = destination / '%06d.png'.format(file_hash)  # %06d will be processed by ffmpeg
+    output = destination / '%06d.png'  # %06d will be processed by ffmpeg
     ffmpy.FFmpeg(
         inputs={args.source: None},
         outputs={str(output): None},
