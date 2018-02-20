@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import os
 from pathlib import Path
 import sys
@@ -8,7 +9,7 @@ import venv
 from colormotion.environment import bash_source
 
 
-def main(target_command):
+def main(args):
     base_dir = Path(__file__).resolve().parent
     venv.create(base_dir / 'venv', with_pip=True)
 
@@ -21,10 +22,15 @@ def main(target_command):
         print('No requirements.txt file found, installing latest versions')
     subprocess.check_call(['pip', 'install', '-e', base_dir])
 
-    os.execvp(target_command[0], target_command)
+    os.execvp(args.command[0], args.command)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Activates a venv for the project.')
+    parser.add_argument('command', nargs='+', help='command to execute in the venv, with optional arguments', default='/bin/sh')
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
     assert sys.version_info.major == 3 and sys.version_info.minor >= 6, 'Use python3 >= 3.6'
-    assert len(sys.argv) > 1, 'Pass target command as an argument'
-    main(sys.argv[1:])
+    main(parse_args())
