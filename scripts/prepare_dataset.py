@@ -21,7 +21,8 @@ def parse_args():
     parser.add_argument('--resolution', type=int, nargs=2, help='output resolution')
     parser.add_argument('--verbose', '-v', action='count',
                         help='verbose mode (GUI output of each frame). If given twice, stop at each frame')
-    parser.add_argument('--loglevel', choices=['debug', 'info', 'warning', 'error', 'critical'], default='warning', help='log level')
+    parser.add_argument('--loglevel', choices=['debug', 'info', 'warning', 'error', 'critical'],
+                        default='warning', help='log level')
     return parser.parse_args()
 
 

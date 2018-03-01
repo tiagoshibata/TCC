@@ -2,6 +2,8 @@ apipkg==1.4
 astroid==1.6.1
 attrs==17.4.0
 click==6.7
+cycler==0.10.0
+decorator==4.2.1
 execnet==1.5.0
 ffmpy==0.2.2
 Flask==0.12.2
@@ -13,7 +15,9 @@ Jinja2==2.10
 Keras==2.1.4
 lazy-object-proxy==1.3.1
 MarkupSafe==1.0
+matplotlib==2.1.2
 mccabe==0.6.1
+networkx==2.1
 numpy==1.14.1
 opencv-python==3.4.0.12
 pexpect==4.4.0
@@ -27,10 +31,14 @@ pylint==1.8.2
 pyparsing==2.2.0
 pytest==3.4.1
 pytest-forked==0.2
-pytest-pylint==0.8.0
+pytest-pylint==0.9.0
 pytest-xdist==1.22.1
+python-dateutil==2.6.1
+pytz==2018.3
+PyWavelets==0.5.2
 pyxdg==0.26
 PyYAML==3.12
+scikit-image==0.13.1
 scipy==1.0.0
 six==1.11.0
 Werkzeug==0.14.1
