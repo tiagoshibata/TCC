@@ -11,7 +11,7 @@ import time
 import cv2
 from skimage.measure import compare_ssim
 
-from colormotion.threading import ConsumerPool
+from colormotion.threading import ConsumerPool, ProducerPool
 
 
 def parse_args():
@@ -71,17 +71,22 @@ def build_dataset_from_video(video, destination, verbose=0):
     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) or '<Unknown frame count>'
     start_time = time.time()
     frame = None
-    encoding_pool = ConsumerPool(lambda x: cv2.imwrite(*x))
-    try:
-        for i in count():
-            previous = frame
+
+    def decode_function():
+        while True:
             has_frame, frame = video.read()
             if not has_frame:
-                break
+                return
+            yield frame
+
+    decoding_thread = ProducerPool(decode_function, num_workers=1)
+    encoding_pool = ConsumerPool(lambda x: cv2.imwrite(*x))
+    try:
+        for i, frame in zip(count(), decoding_thread):
+            if verbose:
+                cv2.imshow('Video', frame)
+                cv2.waitKey(verbose <= 1 and 1 or 0)
             try:
-                if verbose:
-                    cv2.imshow('Video', frame)
-                    cv2.waitKey(verbose <= 1 and 1 or 0)
                 validate_frame(frame)
                 if is_new_scene(frame, previous):
                     print('Frame {} is a new scene'.format(i))
@@ -89,14 +94,16 @@ def build_dataset_from_video(video, destination, verbose=0):
                     scene_destination.mkdir()
                 output = str(scene_destination / '{:06d}.png'.format(i))
                 encoding_pool.put((output, frame))
-                if not i % 1000:
-                    print('Frame {}/{}: {} s'.format(i, frame_count, time.time() - start_time))
             except FrameValidationException as e:
                 print('Invalid frame {}: {}'.format(i, e))
                 frame = None
+            if not i % 1000:
+                print('Frame {}/{}: {} s'.format(i, frame_count, time.time() - start_time))
+            previous = frame
     finally:
         video.release()
         cv2.destroyAllWindows()
+        decoding_thread.join()
         encoding_pool.join()
 
 
