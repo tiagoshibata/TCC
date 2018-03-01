@@ -5,10 +5,13 @@ from itertools import count
 import logging
 from pathlib import Path
 import sys
+import threading
 import time
 
 import cv2
 from skimage.measure import compare_ssim
+
+from colormotion.threading import ConsumerPool
 
 
 def parse_args():
@@ -34,6 +37,16 @@ def hash_file(filename):
     return digest.hexdigest()
 
 
+def get_destination_folder(source, destination):
+    destination = Path(destination)
+    if not destination.exists():
+        fail('Folder {} does not exist'.format(destination))
+    file_hash = hash_file(source)
+    if any(destination.glob('{}_*'.format(file_hash))):
+        fail('Video has already been processed (folders {}/{}_* exist)'.format(destination, file_hash))
+    return str(destination / file_hash)
+
+
 class FrameValidationException(Exception):
     pass
 
@@ -54,43 +67,44 @@ def is_new_scene(frame, previous):
     return scene_changed
 
 
-def main(args):
-    logging.basicConfig(level=getattr(logging, args.loglevel.upper()), format='%(asctime)s:%(levelname)s:%(message)s')
-
-    file_hash = hash_file(args.source)
-    destination = Path(args.destination)
-    if not destination.exists():
-        fail('Folder {} does not exist'.format(destination))
-    if any(destination.glob('{}_*'.format(file_hash))):
-        fail('Video has already been processed (folders {}/{}_* exist)'.format(destination, file_hash))
-
-    video = cv2.VideoCapture(args.source)
+def build_dataset_from_video(video, destination, verbose=0):
     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) or '<Unknown frame count>'
     start_time = time.time()
-    previous = None
-    for i in count():
-        has_frame, frame = video.read()
-        if not has_frame:
-            break
-        try:
-            if args.verbose:
-                cv2.imshow('Video', frame)
-                cv2.waitKey(args.verbose <= 1 and 1 or 0)
-            validate_frame(frame)
-            if is_new_scene(frame, previous):
-                print('Frame {} is a new scene'.format(i))
-                scene_destination = destination / '{}_{:06d}'.format(file_hash, i)
-                scene_destination.mkdir()
-            output = str(scene_destination / '{:06d}.png'.format(i))
-            cv2.imwrite(output, frame)
+    frame = None
+    encoding_pool = ConsumerPool(lambda x: cv2.imwrite(*x))
+    try:
+        for i in count():
             previous = frame
-            if not i % 1000:
-                print('Frame {}/{}: {} s'.format(i, frame_count, time.time() - start_time))
-        except FrameValidationException as e:
-            print('Invalid frame {}: {}'.format(i, e))
-            previous = None
-    video.release()
-    cv2.destroyAllWindows()
+            has_frame, frame = video.read()
+            if not has_frame:
+                break
+            try:
+                if verbose:
+                    cv2.imshow('Video', frame)
+                    cv2.waitKey(verbose <= 1 and 1 or 0)
+                validate_frame(frame)
+                if is_new_scene(frame, previous):
+                    print('Frame {} is a new scene'.format(i))
+                    scene_destination = Path('{}_{:06d}'.format(destination, i))
+                    scene_destination.mkdir()
+                output = str(scene_destination / '{:06d}.png'.format(i))
+                encoding_pool.put((output, frame))
+                if not i % 1000:
+                    print('Frame {}/{}: {} s'.format(i, frame_count, time.time() - start_time))
+            except FrameValidationException as e:
+                print('Invalid frame {}: {}'.format(i, e))
+                frame = None
+    finally:
+        video.release()
+        cv2.destroyAllWindows()
+        encoding_pool.join()
+
+
+def main(args):
+    logging.basicConfig(level=getattr(logging, args.loglevel.upper()), format='%(asctime)s:%(levelname)s:%(message)s')
+    destination = get_destination_folder(args.source, args.destination)
+    video = cv2.VideoCapture(args.source)
+    build_dataset_from_video(video, destination, args.verbose)
 
 
 if __name__ == '__main__':
