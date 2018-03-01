@@ -55,8 +55,8 @@ class FrameValidationException(Exception):
 
 def validate_frame(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    histogram = cv2.calcHist([gray], [0], None, [64], [0, 256]) / (gray.shape[0] * gray.shape[1])
-    if max(histogram) >= 0.96:
+    histogram = sorted(cv2.calcHist([gray], [0], None, [64], [0, 256]) / (gray.shape[0] * gray.shape[1]))
+    if histogram[-1] + histogram[-2] >= 0.85:
         raise FrameValidationException('Histogram shows few light variation')
 
 
@@ -64,7 +64,7 @@ def is_new_scene(frame, previous):
     if previous is None:
         return True
     ssim = compare_ssim(frame, previous, multichannel=True)
-    scene_changed = ssim < 0.4
+    scene_changed = ssim < 0.35
     logging.info('SSIM is {:.4f} ({} scene)'.format(ssim, scene_changed and 'NEW' or 'same'))
     return scene_changed
 
