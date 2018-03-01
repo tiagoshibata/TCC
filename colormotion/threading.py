@@ -77,15 +77,18 @@ class ProducerPool(ThreadPool):
         except StopIteration:
             pass
 
+    def clear_queue(self):
+        try:
+            while True:
+                self.queue.get_nowait()
+        except queue.Empty:
+            pass
+
     def join(self):
         '''Join with all threads.
 
         Might leave leftover items in the queue.
         '''
         self.running = False
-        try:
-            while True:
-                self.queue.get_nowait()
-        except queue.Empty:
-            pass
+        self.clear_queue()
         super().join()

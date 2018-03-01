@@ -18,6 +18,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Prepares a dataset for training.')
     parser.add_argument('source', help='source video')
     parser.add_argument('destination', help='destination directory')
+    parser.add_argument('--resolution', type=int, nargs=2, help='output resolution')
     parser.add_argument('--verbose', '-v', action='count',
                         help='verbose mode (GUI output of each frame). If given twice, stop at each frame')
     parser.add_argument('--loglevel', choices=['debug', 'info', 'warning', 'error', 'critical'], default='warning', help='log level')
@@ -63,11 +64,11 @@ def is_new_scene(frame, previous):
         return True
     ssim = compare_ssim(frame, previous, multichannel=True)
     scene_changed = ssim < 0.4
-    logging.info('SSIM is {} ({} scene)'.format(ssim, scene_changed and 'NEW' or 'SAME'))
+    logging.info('SSIM is {:.4f} ({} scene)'.format(ssim, scene_changed and 'NEW' or 'same'))
     return scene_changed
 
 
-def build_dataset_from_video(video, destination, verbose=0):
+def build_dataset_from_video(video, destination, verbose=0, resolution=None):
     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) or '<Unknown frame count>'
     start_time = time.time()
     frame = None
@@ -77,6 +78,8 @@ def build_dataset_from_video(video, destination, verbose=0):
             has_frame, frame = video.read()
             if not has_frame:
                 return
+            if resolution:
+                frame = cv2.resize(frame, (resolution[0], resolution[1]), interpolation=cv2.INTER_AREA)
             yield frame
 
     decoding_thread = ProducerPool(decode_function, num_workers=1)
@@ -111,7 +114,7 @@ def main(args):
     logging.basicConfig(level=getattr(logging, args.loglevel.upper()), format='%(asctime)s:%(levelname)s:%(message)s')
     destination = get_destination_folder(args.source, args.destination)
     video = cv2.VideoCapture(args.source)
-    build_dataset_from_video(video, destination, args.verbose)
+    build_dataset_from_video(video, destination, args.verbose, args.resolution)
 
 
 if __name__ == '__main__':
