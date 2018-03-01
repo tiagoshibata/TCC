@@ -8,6 +8,7 @@ import sys
 import time
 
 import cv2
+from skimage.measure import compare_ssim
 
 
 def parse_args():
@@ -47,8 +48,10 @@ def validate_frame(frame):
 def is_new_scene(frame, previous):
     if previous is None:
         return True
-    # TODO Compute SSIM
-    return False
+    ssim = compare_ssim(frame, previous, multichannel=True)
+    scene_changed = ssim < 0.4
+    logging.info('SSIM is {} ({} scene)'.format(ssim, scene_changed and 'NEW' or 'SAME'))
+    return scene_changed
 
 
 def main(args):
