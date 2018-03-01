@@ -71,7 +71,6 @@ def is_new_scene(frame, previous):
 def build_dataset_from_video(video, destination, verbose=0, resolution=None):
     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) or '<Unknown frame count>'
     start_time = time.time()
-    frame = None
 
     def decode_function():
         while True:
@@ -82,8 +81,26 @@ def build_dataset_from_video(video, destination, verbose=0, resolution=None):
                 frame = cv2.resize(frame, (resolution[0], resolution[1]), interpolation=cv2.INTER_AREA)
             yield frame
 
+    def consume_function(args):
+        frame_data, previous_data, i = args
+        frame, ready_event, _ = frame_data
+        previous_frame, previous_ready, _ = previous_data or (None,) * 3
+        if is_new_scene(frame, previous_frame):
+            print('Frame {} is a new scene'.format(i))
+            scene_destination = Path('{}_{:06d}'.format(destination, i))
+            scene_destination.mkdir()
+        else:
+            # If this frame is a continuation of the previous scene, save to the same folder
+            previous_ready.wait()
+            scene_destination = previous_data[2]
+        frame_data[2] = scene_destination
+        # Destination has been processed and folder created if needed, so it's ready to save the next frame
+        ready_event.set()
+        cv2.imwrite(str(scene_destination / '{:06d}.png'.format(i)), frame)
+
     decoding_thread = ProducerPool(decode_function, num_workers=1)
-    encoding_pool = ConsumerPool(lambda x: cv2.imwrite(*x))
+    consume_pool = ConsumerPool(consume_function)
+    previous_frame_data = None
     try:
         for i, frame in zip(count(), decoding_thread):
             if verbose:
@@ -91,23 +108,19 @@ def build_dataset_from_video(video, destination, verbose=0, resolution=None):
                 cv2.waitKey(verbose <= 1 and 1 or 0)
             try:
                 validate_frame(frame)
-                if is_new_scene(frame, previous):
-                    print('Frame {} is a new scene'.format(i))
-                    scene_destination = Path('{}_{:06d}'.format(destination, i))
-                    scene_destination.mkdir()
-                output = str(scene_destination / '{:06d}.png'.format(i))
-                encoding_pool.put((output, frame))
+                current_frame_data = [frame, threading.Event(), destination]
+                consume_pool.put((current_frame_data, previous_frame_data, i))
+                previous_frame_data = current_frame_data
             except FrameValidationException as e:
                 print('Invalid frame {}: {}'.format(i, e))
-                frame = None
+                previous_frame_data = None
             if not i % 1000:
-                print('Frame {}/{}: {} s'.format(i, frame_count, time.time() - start_time))
-            previous = frame
+                print('Frame {}/{}: {:.2f} s'.format(i, frame_count, time.time() - start_time))
     finally:
         video.release()
         cv2.destroyAllWindows()
         decoding_thread.join()
-        encoding_pool.join()
+        consume_pool.join()
 
 
 def main(args):
