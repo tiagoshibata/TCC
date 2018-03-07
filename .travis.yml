@@ -1,0 +1,11 @@
+language: python
+sudo: false
+dist: trusty
+python:
+  - "3.6"
+install:
+  - pip install -Ir requirements.txt
+  - pip install -e .[test]
+script:
+  - pytest --pylint-error-types=CREF
+  - pytest || true

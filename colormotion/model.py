@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from keras.models import Sequential
-from keras.layers import Conv1D, Conv2D, Conv2DTranspose
+from keras.layers import Conv2D, Conv2DTranspose
 
 
 def model(input_shape):
