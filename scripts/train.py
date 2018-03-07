@@ -2,7 +2,6 @@
 import argparse
 
 from keras.preprocessing.image import ImageDataGenerator
-from keras.utils import plot_model
 
 from colormotion.model import model
 
@@ -10,7 +9,6 @@ from colormotion.model import model
 def parse_args():
     parser = argparse.ArgumentParser(description='Run training.')
     parser.add_argument('dataset', help='dataset folder')
-    parser.add_argument('--plot', help='plot architecture to given picture')
     return parser.parse_args()
 
 
@@ -69,8 +67,6 @@ def data_generators(dataset_folder):
 def main(args):
     train_generator, test_generator = data_generators(args.dataset)
     m = model((720, 1280, 1))  # (height, width, channels)
-    if args.plot:
-        plot_model(m, to_file=args.plot)
     m.fit_generator(
         train_generator,
         steps_per_epoch=2000,

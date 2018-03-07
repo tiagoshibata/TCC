@@ -40,13 +40,16 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=['ffmpy', 'jupyter', 'keras', 'opencv-python', 'Pillow', 'pydot', 'scikit-image'],
+    install_requires=['keras', 'opencv-python', 'Pillow', 'scikit-image'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    extras_require={'test': TESTS_REQUIRE},
+    extras_require={
+        'test': TESTS_REQUIRE,
+        'jupyter': ['jupyter', 'pydot'],
+    },
 
     setup_requires=['pytest-runner'],
 
