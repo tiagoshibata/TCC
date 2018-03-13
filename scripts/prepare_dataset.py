@@ -43,10 +43,11 @@ def get_destination_folder(source, destination):
     destination = Path(destination)
     if not destination.exists():
         fail('Folder {} does not exist'.format(destination))
-    file_hash = hash_file(source)
-    if any(destination.glob('{}_*'.format(file_hash))):
-        fail('Video has already been processed (folders {}/{}_* exist)'.format(destination, file_hash))
-    return str(destination / file_hash)
+    video_destination = destination / hash_file(source)
+    if video_destination.exists():
+        fail('Video has already been processed (folder {} exists)'.format(video_destination))
+    video_destination.mkdir()
+    return video_destination
 
 
 class FrameValidationException(Exception):
@@ -88,7 +89,7 @@ def build_dataset_from_video(video, destination, verbose=0, resolution=None):
         previous_frame, previous_ready, _ = previous_data or (None,) * 3
         if is_new_scene(frame, previous_frame):
             print('Frame {} is a new scene'.format(i))
-            scene_destination = Path('{}_{:06d}'.format(destination, i))
+            scene_destination = destination / '{:06d}'.format(i)
             scene_destination.mkdir()
         else:
             # If this frame is a continuation of the previous scene, save to the same folder
