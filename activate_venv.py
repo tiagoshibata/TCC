@@ -27,7 +27,7 @@ def main(args):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Activates a venv for the project.')
-    parser.add_argument('command', nargs='*', default='/bin/sh',
+    parser.add_argument('command', nargs='*', default=['/bin/sh'],
                         help='command to execute in the venv, with optional arguments')
     return parser.parse_args()
 
