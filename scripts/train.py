@@ -3,7 +3,7 @@ import argparse
 
 from keras.preprocessing.image import ImageDataGenerator
 
-from colormotion.model import model
+from colormotion.nn.model import model
 
 
 def parse_args():
