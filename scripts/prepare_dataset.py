@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 import argparse
-import hashlib
 from itertools import count
 import logging
-from pathlib import Path
-import sys
 import threading
 import time
 
 import cv2
 from skimage.measure import compare_ssim
 
+import colormotion.dataset as dataset
 from colormotion.threading import ConsumerPool, ProducerPool
 
 
@@ -24,30 +22,6 @@ def parse_args():
     parser.add_argument('--loglevel', choices=['debug', 'info', 'warning', 'error', 'critical'],
                         default='warning', help='log level')
     return parser.parse_args()
-
-
-def fail(message, *args, **kwargs):
-    print(message, file=sys.stderr, *args, **kwargs)
-    raise SystemExit(1)
-
-
-def hash_file(filename):
-    digest = hashlib.blake2b(digest_size=20)
-    with open(filename, 'rb') as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def get_destination_folder(source, destination):
-    destination = Path(destination)
-    if not destination.exists():
-        fail('Folder {} does not exist'.format(destination))
-    video_destination = destination / hash_file(source)
-    if video_destination.exists():
-        fail('Video has already been processed (folder {} exists)'.format(video_destination))
-    video_destination.mkdir()
-    return video_destination
 
 
 class FrameValidationException(Exception):
@@ -89,8 +63,7 @@ def build_dataset_from_video(video, destination, verbose=0, resolution=None):
         previous_frame, previous_ready, _ = previous_data or (None,) * 3
         if is_new_scene(frame, previous_frame):
             print('Frame {} is a new scene'.format(i))
-            scene_destination = destination / '{:06d}'.format(i)
-            scene_destination.mkdir()
+            scene_destination = dataset.get_scene_directory(destination, i)
         else:
             # If this frame is a continuation of the previous scene, save to the same folder
             previous_ready.wait()
@@ -98,7 +71,7 @@ def build_dataset_from_video(video, destination, verbose=0, resolution=None):
         frame_data[2] = scene_destination
         # Destination has been processed and folder created if needed, so it's ready to save the next frame
         ready_event.set()
-        cv2.imwrite(str(scene_destination / '{:06d}.png'.format(i)), frame)
+        cv2.imwrite(dataset.get_frame_path(scene_destination, i), frame)
 
     decoding_thread = ProducerPool(decode_function, num_workers=1)
     consume_pool = ConsumerPool(consume_function)
@@ -127,7 +100,7 @@ def build_dataset_from_video(video, destination, verbose=0, resolution=None):
 
 def main(args):
     logging.basicConfig(level=getattr(logging, args.loglevel.upper()), format='%(asctime)s:%(levelname)s:%(message)s')
-    destination = get_destination_folder(args.source, args.destination)
+    destination = dataset.create_video_destination_folder(args.source, args.destination)
     video = cv2.VideoCapture(args.source)
     build_dataset_from_video(video, destination, args.verbose, args.resolution)
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+import sys
 
 
 def parse_environment(environment):
@@ -19,3 +20,8 @@ def bash_env(filename):
 def bash_source(filename):
     '''Update the current process' environment with bash's source command.'''
     os.environ.update(bash_env(filename))
+
+
+def fail(message, *args, **kwargs):
+    print(message, file=sys.stderr, *args, **kwargs)
+    raise SystemExit(1)
