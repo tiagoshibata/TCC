@@ -40,7 +40,7 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=['keras', 'opencv-python', 'Pillow', 'scikit-image'],
+    install_requires=['keras', 'opencv-python', 'scikit-image'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,

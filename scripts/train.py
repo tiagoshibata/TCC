@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import argparse
+import random
+import sys
 
-from keras.preprocessing.image import ImageDataGenerator
-
+from colormotion.nn.generators import VideoFramesDataGenerator
 from colormotion.nn.model import model
 
 
@@ -13,55 +14,15 @@ def parse_args():
 
 
 def data_generators(dataset_folder):
-    params = {
-        'data_format': 'channels_last',
-        'rescale': 1 / 255,
-    }
     flow_params = {
-        'batch_size': 32,
-        'class_mode': None,
-        'target_size': (720, 1280),
-        'seed': 14,
+        'batch_size': 1,
+        'target_size': (32, 32),
+        'seed': random.randrange(sys.maxsize),
     }
-    # TODO Split train and validation datasets
-    # FIXME color_mode='grayscale' calls Pillow.Image.convert('L'),
-    # which uses the ITU-R 601-2 luma transform, but L*a*b* seems more suitable.
-    # See: https://github.com/keras-team/keras/blob/master/keras/preprocessing/image.py
-    # http://pillow.readthedocs.io/en/3.1.x/reference/Image.html#PIL.Image.Image.convert
-    train_params = {
-        'shear_range': 0.2,
-        'horizontal_flip': True,
-        'zoom_range': 0.2,
-    }
-    train = ImageDataGenerator(
-        **params,
-        **train_params
-    ).flow_from_directory(
-        dataset_folder,
-        color_mode='grayscale',
-        **flow_params)
-
-    train_ground_truth = ImageDataGenerator(
-        **params,
-        **train_params
-    ).flow_from_directory(
-        dataset_folder,
-        **flow_params)
-
-    test = ImageDataGenerator(
-        **params
-    ).flow_from_directory(
-        dataset_folder,
-        color_mode='grayscale',
-        **flow_params)
-
-    test_ground_truth = ImageDataGenerator(
-        **params
-    ).flow_from_directory(
-        dataset_folder,
-        **flow_params)
-
-    return zip(train, train_ground_truth), zip(test, test_ground_truth)
+    # TODO Split train and test datasets
+    train = VideoFramesDataGenerator().flow_from_directory(dataset_folder, **flow_params)
+    test = VideoFramesDataGenerator().flow_from_directory(dataset_folder, **flow_params)
+    return train, test
 
 
 def main(args):

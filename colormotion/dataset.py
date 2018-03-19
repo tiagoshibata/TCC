@@ -27,13 +27,15 @@ def create_video_destination_folder(video_filename, root):
 
 
 def get_scene_directory(root, scene_number):
+    # TODO Split train and validation datasets
     directory = Path(root) / '{:06d}'.format(scene_number)
     directory.mkdir(exist_ok=True)
     return directory
 
 
-def get_frame_path(scene_directory, frame_number):
-    return Path(scene_directory) / '{:06d}.png'.format(frame_number)
+def get_frame_path(*args):
+    scene_directory, frame_number = Path(*args[:-1]), args[-1]
+    return scene_directory / '{:06d}.png'.format(frame_number)
 
 
 def load_image(filename, color=True, resolution=None):
@@ -41,6 +43,11 @@ def load_image(filename, color=True, resolution=None):
     if resolution:
         image = cv2.resize(image, (resolution[0], resolution[1]), interpolation=cv2.INTER_AREA)
     return image
+
+
+def convert_to_grayscale(image):
+    # FIXME Using the L channel in L*a*b* colorspace seems more suitable according to research.
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 
 def get_frames(root):
