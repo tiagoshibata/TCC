@@ -5,7 +5,7 @@ python:
   - "3.6"
 install:
   - pip install -Ir requirements.txt
-  - pip install -e .[test]
+  - pip install -e .[ci-test]
 script:
   - pylint -d fixme colormotion/ scripts/
   - pytest --pylint-error-types=CREF

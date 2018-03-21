@@ -7,6 +7,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.rst')) as f:
     long_description = f.read()
 
 TESTS_REQUIRE = ['pylint', 'pytest', 'pytest-pylint']
+CI_TESTS_REQUIRE = [*TESTS_REQUIRE, 'tensorflow']
 setup(
     name='colormotion',
 
@@ -48,12 +49,13 @@ setup(
     # $ pip install -e .[dev,test]
     extras_require={
         'test': TESTS_REQUIRE,
+        'ci-test': CI_TESTS_REQUIRE,
         'jupyter': ['jupyter', 'pydot'],
     },
 
     setup_requires=['pytest-runner'],
 
-    TESTS_REQUIRE=TESTS_REQUIRE,
+    tests_require=TESTS_REQUIRE,
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.
