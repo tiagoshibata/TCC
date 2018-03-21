@@ -40,20 +40,20 @@ def l_to_ab():
     # TODO resize input or make input_shape configurable
     conv_block(64, [
         {'input_shape': (224, 224, 1)},
-        {'stride': 2},
+        {'strides': 2},
     ])
 
     # conv2
     conv_block(128, [
         {},
-        {'stride': 2},
+        {'strides': 2},
     ])
 
     # conv3
     conv_block(256, [
         {},
         {},
-        {'stride': 2},
+        {'strides': 2},
     ])
 
     # conv4 (dilation = 1)
@@ -70,7 +70,7 @@ def l_to_ab():
 
     # conv8
     conv_block(256, [
-        {'kernel_size': 4, 'stride': 2},
+        {'kernel_size': 4, 'strides': 2},
         {},
         {},
     ])
@@ -81,4 +81,10 @@ def l_to_ab():
     m.add(Activation('softmax'))
 
     # Decoding
-    m.add(Conv2D(2, 1, padding='same'))
+    # TODO Implement class rebalancing, implement annealed-mean interpolation
+    m.add(Conv2D(2, 1, padding='same'))  # FIXME Placeholder, should be an annealed-mean interpolation
+    # TODO Implement loss function (cross entropy with soft-encoded ground truth)
+    m.compile(loss='mean_squared_error',
+              optimizer='adam',
+              metrics=['accuracy'])
+    return m
