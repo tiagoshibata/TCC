@@ -1,7 +1,7 @@
 from keras.layers import Lambda
 
 
-def Crop(axis, start, end):
+def Crop(axis, start, end):  # pylint: disable=invalid-name
     def f(x):
         if axis == 0:
             return x[start:end]
