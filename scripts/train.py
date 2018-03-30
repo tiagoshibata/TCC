@@ -4,7 +4,7 @@ import random
 import sys
 
 from colormotion.nn.generators import VideoFramesDataGenerator
-from colormotion.nn.model import model
+# from colormotion.nn.model import model
 
 
 def parse_args():
@@ -27,13 +27,13 @@ def data_generators(dataset_folder):
 
 def main(args):
     train_generator, test_generator = data_generators(args.dataset)
-    m = model((720, 1280, 1))  # (height, width, channels)
-    m.fit_generator(
-        train_generator,
-        steps_per_epoch=2000,
-        epochs=50,
-        validation_data=test_generator,
-        validation_steps=800)
+    # m = model((32, 32, 1))  # (height, width, channels)
+    # m.fit_generator(
+    #     train_generator,
+    #     steps_per_epoch=2000,
+    #     epochs=50,
+    #     validation_data=test_generator,
+    #     validation_steps=800)
     # score = m.evaluate(...)
     # print('Test loss:', score[0])
     # print('Test accuracy:', score[1])
