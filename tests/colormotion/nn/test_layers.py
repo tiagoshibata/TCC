@@ -30,7 +30,7 @@ def test_Scale():
     data = np.array(np.arange(12).reshape((2, 2, 3)), ndmin=4)
     assert (m.predict(data, batch_size=1) == np.array([
         [
-            [[0, 10, 20], [ 30, 40, 50]],
+            [[0, 10, 20], [30, 40, 50]],
             [[60, 70, 80], [90, 100, 110]],
         ]
     ])).all()

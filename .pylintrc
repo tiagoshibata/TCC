@@ -20,7 +20,7 @@ max-line-length=120
 
 [BASIC]
 # Regular expression matching correct function names
-function-rgx=[a-z_][a-z0-9_]{0,30}$
+function-rgx=([a-z_][a-z0-9_]{0,30}|(test_.*))$
 
 # Regular expression matching correct variable names
 variable-rgx=[a-z_][a-z0-9_]{0,30}$
