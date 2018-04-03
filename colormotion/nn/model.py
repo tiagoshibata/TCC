@@ -70,7 +70,7 @@ def previous_frame_input():
     x = Conv2D(512, 3, padding='same', activation='relu')(x)
     # conv4_3
     x = Conv2D(512, 3, padding='same', activation='relu')(x)
-    x = BatchNormalization()(x)  # TODO param {lr_mult: 0 decay_mult: 0}
+    x = BatchNormalization()(x)
 
     # conv5
     # conv5_1
@@ -79,7 +79,7 @@ def previous_frame_input():
     x = Conv2D(512, 3, padding='same', dilation_rate=2, activation='relu')(x)
     # conv5_3
     x = Conv2D(512, 3, padding='same', dilation_rate=2, activation='relu')(x)
-    x = BatchNormalization()(x)  # TODO param {lr_mult: 0 decay_mult: 0}
+    x = BatchNormalization()(x)
 
     # conv6
     # conv6_1
@@ -88,7 +88,7 @@ def previous_frame_input():
     x = Conv2D(512, 3, padding='same', dilation_rate=2, activation='relu')(x)
     # conv6_3
     x = Conv2D(512, 3, padding='same', dilation_rate=2, activation='relu')(x)
-    x = BatchNormalization()(x)  # TODO param {lr_mult: 0 decay_mult: 0}
+    x = BatchNormalization()(x)
 
     # conv7
     # conv7_1
@@ -97,7 +97,7 @@ def previous_frame_input():
     x = Conv2D(512, 3, padding='same', activation='relu')(x)
     # conv7_3
     x = Conv2D(512, 3, padding='same', activation='relu')(x)
-    x = BatchNormalization()(x)  # TODO param {lr_mult: 0 decay_mult: 0}
+    x = BatchNormalization()(x)
 
     # conv8
     # conv8_1
@@ -112,7 +112,7 @@ def previous_frame_input():
     x = Conv2D(256, 3, padding='same', activation='relu')(x)
     # conv8_3
     x = Conv2D(256, 3, padding='same', activation='relu')(x)
-    x = BatchNormalization()(x)  # TODO param {lr_mult: 0 decay_mult: 0}
+    x = BatchNormalization()(x)
 
     # conv9
     # conv9_1
@@ -131,7 +131,7 @@ def previous_frame_input():
     x = Conv2D(128, 3, padding='same', activation='relu')(x)
     # conv9_3
     x = Conv2D(128, 3, padding='same', activation='relu')(x)
-    x = BatchNormalization()(x)  # TODO param {lr_mult: 0 decay_mult: 0}
+    x = BatchNormalization()(x)
 
     # conv10
     # conv10_1
