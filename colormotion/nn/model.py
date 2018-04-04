@@ -7,7 +7,7 @@ from keras.models import Model, Sequential
 from colormotion.nn.layers import Scale
 
 
-def previous_frame_input():
+def previous_frame_input():  # pylint: disable=too-many-statements
     '''Model receiving the previous frame and current L value as input.
 
     Based on Real-Time User-Guided Image Colorization with Learned Deep Priors (R. Zhang et al).
@@ -86,11 +86,17 @@ def previous_frame_input():
     x = Conv2D_default(512)(x)
     x = BatchNormalization()(x)
 
+    # Shortcuts, transpose convolutions and some convolutions use a custom initializer
+    custom_initializer = {
+        'kernel_initializer': RandomNormal(stddev=.01),
+        'bias_initializer': 'ones',
+    }
+
     # conv8
     # conv8_1
     x = Conv2DTranspose(256, 4, padding='same', strides=2)(x)
     # Shortcut
-    shortcut = Conv2D(256, 3, padding='same', kernel_initializer=RandomNormal(stddev=.01), bias_initializer='ones')(conv3_3_norm)
+    shortcut = Conv2D(256, 3, padding='same', **custom_initializer)(conv3_3_norm)
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
     # conv8_2
@@ -101,26 +107,26 @@ def previous_frame_input():
 
     # conv9
     # conv9_1
-    x = Conv2DTranspose(128, 4, padding='same', strides=2, kernel_initializer=RandomNormal(stddev=.01), bias_initializer='ones')(x)
+    x = Conv2DTranspose(128, 4, padding='same', strides=2, **custom_initializer)(x)
     # Shortcut
-    shortcut = Conv2D(128, 3, padding='same', kernel_initializer=RandomNormal(stddev=.01), bias_initializer='ones')(conv2_2norm)
+    shortcut = Conv2D(128, 3, padding='same', **custom_initializer)(conv2_2norm)
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
     # conv9_2
-    x = Conv2D_default(128, kernel_initializer=RandomNormal(stddev=.01), bias_initializer='ones')(x)
+    x = Conv2D_default(128, **custom_initializer)(x)
     # conv9_3
     x = Conv2D_default(128)(x)
     x = BatchNormalization()(x)
 
     # conv10
     # conv10_1
-    x = Conv2DTranspose(128, 4, padding='same', strides=2, kernel_initializer=RandomNormal(stddev=.01), bias_initializer='ones')(x)
+    x = Conv2DTranspose(128, 4, padding='same', strides=2, **custom_initializer)(x)
     # Shortcut
-    shortcut = Conv2D(128, 3, padding='same', kernel_initializer=RandomNormal(stddev=.01), bias_initializer='ones')(conv1_2norm)
+    shortcut = Conv2D(128, 3, padding='same', **custom_initializer)(conv1_2norm)
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
     # conv10_2
-    x = Conv2D(128, 3, padding='same', kernel_initializer=RandomNormal(stddev=.01), bias_initializer='ones')(x)
+    x = Conv2D(128, 3, padding='same', **custom_initializer)(x)
     x = LeakyReLU(alpha=.2)(x)
     # conv10_ab
     x = Conv2D(2, 1, activation='tanh')(x)
