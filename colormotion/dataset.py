@@ -52,4 +52,5 @@ def convert_to_grayscale(image):
 
 def get_frames(root):
     return {scene: sorted(int(frame.stem) for frame in scene.iterdir())
-            for scene in Path(root).iterdir()}
+            for movie in Path(root).iterdir()
+            for scene in movie.iterdir()}

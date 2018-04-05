@@ -23,21 +23,21 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
         frames = dataset.get_frames(root)
         contiguous_frames = self._get_contiguous_frames(frames)
         while True:
-            yield self._load_batch(root, random_generator.choices(contiguous_frames, k=batch_size),
+            yield self._load_batch(random_generator.choices(contiguous_frames, k=batch_size),
                                    target_size=target_size)
 
-    def _load_batch(self, root, start_frames, target_size):
+    def _load_batch(self, start_frames, target_size):
         if len(start_frames) != 1:
             raise NotImplementedError()
         batch = [
-            self._load_sequence(root, scene, frame, target_size)
+            self._load_sequence(scene, frame, target_size)
             for scene, frame in start_frames
         ]
-        yield [batch[0, 0]], [batch[0, 1]]
+        return [batch[0, 0]], [batch[0, 1]]
 
-    def _load_sequence(self, root, scene, start_frame, target_size):
+    def _load_sequence(self, scene, start_frame, target_size):
         def load_image(scene, frame_number):
-            return dataset.load_image(dataset.get_frame_path(root, scene, frame_number), resolution=target_size)
+            return dataset.load_image(str(dataset.get_frame_path(scene, frame_number)), resolution=target_size)
 
         # y = expected colorization in final frame
         y = load_image(scene, start_frame + self.contiguous_count - 1)

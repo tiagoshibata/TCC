@@ -71,7 +71,7 @@ def build_dataset_from_video(video, destination, verbose=0, resolution=None):
         frame_data[2] = scene_destination
         # Destination has been processed and folder created if needed, so it's ready to save the next frame
         ready_event.set()
-        cv2.imwrite(dataset.get_frame_path(scene_destination, i), frame)
+        cv2.imwrite(str(dataset.get_frame_path(scene_destination, i)), frame, [cv2.IMWRITE_PNG_COMPRESSION, 9])
 
     decoding_thread = ProducerPool(decode_function, num_workers=1)
     consume_pool = ConsumerPool(consume_function)

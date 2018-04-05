@@ -7,6 +7,8 @@ import pytest
 
 import colormotion.dataset as dataset
 
+base_dir = Path(__file__).resolve().parent
+
 
 @pytest.mark.parametrize("dataset_directory,scene_number,expected", [
     ('dataset', 1, 'dataset/000001'),
@@ -36,3 +38,11 @@ def test_load_image(mock_imread):
     mock_image = np.zeros((200, 200), dtype='uint8')
     mock_imread.return_value = mock_image
     assert dataset.load_image('image.png', color=False, resolution=(100, 50)).shape == (50, 100)
+
+
+def test_get_frames():
+    dataset_directory = base_dir / 'test_dataset'
+    assert dataset.get_frames(dataset_directory) == {
+        dataset_directory / 'movie/000000': [0, 1],
+        dataset_directory / 'movie/000002': [2],
+    }
