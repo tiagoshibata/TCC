@@ -33,20 +33,23 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
             self._load_sequence(scene, frame, target_size)
             for scene, frame in start_frames
         ]
-        return [batch[0, 0]], [batch[0, 1]]
+        return [batch[0][0]], [batch[0][1]]
 
     def _load_sequence(self, scene, start_frame, target_size):
-        def load_image(scene, frame_number):
-            return dataset.load_image(str(dataset.get_frame_path(scene, frame_number)), resolution=target_size)
+        def read_image(scene, frame_number):
+            return dataset.read_image(str(dataset.get_frame_path(scene, frame_number)), resolution=target_size)
 
         # y = expected colorization in final frame
-        y = load_image(scene, start_frame + self.contiguous_count - 1)
+        y = read_image(scene, start_frame + self.contiguous_count - 1)
         # x = network input (previous frames colorized + current frame in grayscale)
         x = [
-            load_image(scene, start_frame + i)
+            read_image(scene, start_frame + i)
             for i in range(self.contiguous_count - 1)
         ]
         x.append(dataset.convert_to_grayscale(y))
+        # Rescale data
+        x = [self.rescale * i for i in x]
+        y = self.rescale * y
         return x, y
 
     def _get_contiguous_frames(self, frames):

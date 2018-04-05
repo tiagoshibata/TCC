@@ -38,8 +38,10 @@ def get_frame_path(*args):
     return scene_directory / '{:06d}.png'.format(frame_number)
 
 
-def load_image(filename, color=True, resolution=None):
+def read_image(filename, color=True, resolution=None):
     image = cv2.imread(filename, color and cv2.IMREAD_COLOR or cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        raise RuntimeError('Cannot read image {}'.format(filename))
     if resolution:
         image = cv2.resize(image, (resolution[0], resolution[1]), interpolation=cv2.INTER_AREA)
     return image

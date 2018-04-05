@@ -29,15 +29,15 @@ def test_get_frame_path(scene_directory, frame_number, expected):
 
 
 @patch('cv2.imread')
-def test_load_image(mock_imread):
+def test_read_image(mock_imread):
     mock_image = np.zeros((200, 200, 3), dtype='uint8')
     mock_imread.return_value = mock_image
-    assert (dataset.load_image('image.png') == mock_image).all()
-    assert dataset.load_image('image.png', resolution=(100, 50)).shape == (50, 100, 3)
+    assert (dataset.read_image('image.png') == mock_image).all()
+    assert dataset.read_image('image.png', resolution=(100, 50)).shape == (50, 100, 3)
 
     mock_image = np.zeros((200, 200), dtype='uint8')
     mock_imread.return_value = mock_image
-    assert dataset.load_image('image.png', color=False, resolution=(100, 50)).shape == (50, 100)
+    assert dataset.read_image('image.png', color=False, resolution=(100, 50)).shape == (50, 100)
 
 
 def test_get_frames():
