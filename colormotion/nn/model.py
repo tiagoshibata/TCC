@@ -13,7 +13,7 @@ def previous_frame_input():  # pylint: disable=too-many-statements
     Based on Real-Time User-Guided Image Colorization with Learned Deep Priors (R. Zhang et al).
     '''
     state_input = Input(shape=(256, 256, 3), name='state_input')  # state from previous frame
-    l_input = Input(shape=(256, 256, 1), name='l_input')
+    l_input = Input(shape=(256, 256, 1), name='grayscale_input')
 
     def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
         '''Conv2D block with most commonly used options.'''

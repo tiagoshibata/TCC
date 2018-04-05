@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import random
+from random import Random
+from types import SimpleNamespace
 
 import colormotion.dataset as dataset
 
@@ -19,21 +20,18 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
         self.contiguous_count = contiguous_count
 
     def flow_from_directory(self, root, batch_size=32, target_size=None, seed=None):
-        random_generator = random.Random(seed)
-        frames = dataset.get_frames(root)
-        contiguous_frames = self._get_contiguous_frames(frames)
+        contiguous_frames = self._get_contiguous_frames(dataset.get_frames(root))
+        random = Random(seed)
         while True:
-            yield self._load_batch(random_generator.choices(contiguous_frames, k=batch_size),
+            yield self._load_batch(random.choices(contiguous_frames, k=batch_size),
                                    target_size=target_size)
 
     def _load_batch(self, start_frames, target_size):
-        if len(start_frames) != 1:
-            raise NotImplementedError()
         batch = [
             self._load_sequence(scene, frame, target_size)
             for scene, frame in start_frames
         ]
-        return [batch[0][0]], [batch[0][1]]
+        return [x[0] for x in batch], [x[1] for x in batch]
 
     def _load_sequence(self, scene, start_frame, target_size):
         def read_image(scene, frame_number):
@@ -41,16 +39,17 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
 
         # y = expected colorization in final frame
         y = read_image(scene, start_frame + self.contiguous_count - 1)
-        # x = network input (previous frames colorized + current frame in grayscale)
-        x = [
+        # network input (previous frames colorized and current frame in grayscale)
+        state = [
             read_image(scene, start_frame + i)
             for i in range(self.contiguous_count - 1)
         ]
-        x.append(dataset.convert_to_grayscale(y))
+        grayscale = dataset.convert_to_grayscale(y)
         # Rescale data
-        x = [self.rescale * i for i in x]
-        y = self.rescale * y
-        return x, y
+        state = [self.rescale * i for i in state]
+        grayscale *= self.rescale
+        y *= self.rescale
+        return {'state_input': state, 'grayscale_input': grayscale}, y
 
     def _get_contiguous_frames(self, frames):
         # Remove frames at the end of a scene and discard too short scenes

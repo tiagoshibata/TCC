@@ -15,8 +15,8 @@ def parse_args():
 
 def data_generators(dataset_folder):
     flow_params = {
-        'batch_size': 1,
-        'target_size': (32, 32),
+        'batch_size': 8,
+        'target_size': (256, 256),
         'seed': random.randrange(sys.maxsize),
     }
     # TODO Split train and test datasets
@@ -29,7 +29,7 @@ def main(args):
     train_generator, test_generator = data_generators(args.dataset)
     m = model.previous_frame_input()
     m.fit_generator(
-        train_generator,
+        {'state_input': train_generator, 'grayscale_input': train_generator},
         steps_per_epoch=2000,
         epochs=50,
         validation_data=test_generator,
