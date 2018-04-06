@@ -3,6 +3,7 @@ import hashlib
 from pathlib import Path
 
 import cv2
+import numpy as np
 
 from colormotion.environment import fail
 
@@ -49,7 +50,9 @@ def read_image(filename, color=True, resolution=None):
 
 def convert_to_grayscale(image):
     # FIXME Using the L channel in L*a*b* colorspace seems more suitable according to research.
-    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Reshape to enforce three dimensions, even if last one has a single element (required by Keras)
+    return grayscale.reshape(*grayscale.shape, 1)
 
 
 def get_frames(root):

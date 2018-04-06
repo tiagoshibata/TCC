@@ -29,7 +29,7 @@ def main(args):
     train_generator, test_generator = data_generators(args.dataset)
     m = model.previous_frame_input()
     m.fit_generator(
-        {'state_input': train_generator, 'grayscale_input': train_generator},
+        train_generator,
         steps_per_epoch=2000,
         epochs=50,
         validation_data=test_generator,
