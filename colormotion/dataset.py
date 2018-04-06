@@ -3,7 +3,6 @@ import hashlib
 from pathlib import Path
 
 import cv2
-import numpy as np
 
 from colormotion.environment import fail
 
@@ -55,7 +54,7 @@ def to_grayscale(image):
     return grayscale.reshape(*grayscale.shape, 1)
 
 
-def to_l_ab(image):
+def to_l_ab(_):
     raise NotImplementedError()
 
 
