@@ -48,11 +48,15 @@ def read_image(filename, color=True, resolution=None):
     return image
 
 
-def convert_to_grayscale(image):
+def to_grayscale(image):
     # FIXME Using the L channel in L*a*b* colorspace seems more suitable according to research.
     grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # Reshape to enforce three dimensions, even if last one has a single element (required by Keras)
     return grayscale.reshape(*grayscale.shape, 1)
+
+
+def to_l_ab(image):
+    raise NotImplementedError()
 
 
 def get_frames(root):

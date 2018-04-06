@@ -28,28 +28,26 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
                                    target_size=target_size)
 
     def _load_batch(self, start_frames, target_size):
-        x = [[]] * (self.contiguous_count + 1)
-        y = []
-        for scene, frame in start_frames:
-            sample = self._load_sample(scene, frame, target_size)
-            x = [state + [sample_frame] for sample_frame, state in zip(sample[:-1], x)]
-            y.append(sample[-1])
-        return [np.array(i) for i in x], np.array(y)
+        samples = [self._load_sample(scene, frame, target_size) for scene, frame in start_frames]
+        state = np.array([i[0:-2] for i in samples]).transpose((1, 0, 2, 3, 4))
+        grayscale = np.array([i[-2] for i in samples])
+        y = np.array([i[-1] for i in samples])
+        return list(state) + [grayscale], y
 
     def _load_sample(self, scene, start_frame, target_size):
         '''Load a sample to build a batch.'''
         def read_image(scene, frame_number):
             return dataset.read_image(str(dataset.get_frame_path(scene, frame_number)), resolution=target_size)
 
-        # y = expected colorization in final frame
-        y = read_image(scene, start_frame + self.contiguous_count)
-        # network input (previous frames colorized and current frame in grayscale)
+        # y = expected colorization in last frame
+        # x = previous frames colorized and current frame in grayscale
+        last_frame = read_image(scene, start_frame + self.contiguous_count)
+        grayscale, y = dataset.to_l_ab(last_frame)
+        grayscale, y = self.rescale * grayscale, self.rescale * y
         state = [
             self.rescale * read_image(scene, start_frame + i)
             for i in range(self.contiguous_count)
         ]
-        grayscale = self.rescale * dataset.convert_to_grayscale(y)
-        y = self.rescale * y
         return state + [grayscale, y]
 
     def _get_contiguous_frames(self, frames):
