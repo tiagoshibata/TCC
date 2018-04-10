@@ -7,17 +7,15 @@ import colormotion.dataset as dataset
 
 
 class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
-    def __init__(self, data_format='channels_last', rescale=1 / 255, contiguous_count=1):
+    def __init__(self, data_format='channels_last', contiguous_count=1):
         '''Generate groups of contiguous frames from a dataset.
 
         data_format: see keras.preprocessing.image.ImageDataGenerator
-        rescale: see keras.preprocessing.image.ImageDataGenerator
         contiguous_count: number of previous frames to yield at each call (default 1)
         '''
         # TODO Support data augmentation, similar to https://keras.io/preprocessing/image/
         if data_format != 'channels_last':
             raise NotImplementedError()
-        self.rescale = rescale
         self.contiguous_count = contiguous_count
 
     def flow_from_directory(self, root, batch_size=32, target_size=None, seed=None):
@@ -43,9 +41,8 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
         # x = previous frames colorized and current frame in grayscale
         last_frame = read_image(scene, start_frame + self.contiguous_count)
         grayscale, y = dataset.to_l_ab(last_frame)
-        grayscale, y = self.rescale * grayscale, self.rescale * y
         state = [
-            self.rescale * read_image(scene, start_frame + i)  # FIXME call to_l_ab on the image
+            read_image(scene, start_frame + i)  # FIXME call to_l_ab on the image
             for i in range(self.contiguous_count)
         ]
         return state + [grayscale, y]

@@ -3,6 +3,8 @@ import hashlib
 from pathlib import Path
 
 import cv2
+import numpy as np
+import skimage.color
 
 from colormotion.environment import fail
 
@@ -44,18 +46,24 @@ def read_image(filename, color=True, resolution=None):
         raise RuntimeError('Cannot read image {}'.format(filename))
     if resolution:
         image = cv2.resize(image, (resolution[0], resolution[1]), interpolation=cv2.INTER_AREA)
-    return image
+    return (image / 255).astype(np.float32)
 
 
-def to_grayscale(image):
-    # FIXME Using the L channel in L*a*b* colorspace seems more suitable according to research.
-    grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # Reshape to enforce three dimensions, even if last one has a single element (required by Keras)
-    return grayscale.reshape(*grayscale.shape, 1)
+def to_lab(image):
+    '''Convert BGR image to L*a*b* colorspace.
+
+    Return a tuple (l, ab), where l was mean centered.
+    '''
+    lab = skimage.color.rgb2lab(image[:, :, ::-1]).astype(np.float32)
+    l, ab = lab[:, :, 0], lab[:, :, 1:]
+    l -= 50  # mean centering
+    return l, ab
 
 
-def to_l_ab(_):
-    raise NotImplementedError()
+def lab_to_bgr(l, ab):
+    l += 50  # mean centering
+    lab = np.dstack((l, ab)).astype(np.float64)
+    return skimage.color.lab2rgb(lab)[:, :, ::-1]
 
 
 def get_frames(root):

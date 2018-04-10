@@ -2,6 +2,7 @@
 from pathlib import Path
 from unittest.mock import ANY, patch
 
+import cv2
 import numpy as np
 import pytest
 
@@ -38,6 +39,21 @@ def test_read_image(mock_imread):
     mock_image = np.zeros((200, 200), dtype='uint8')
     mock_imread.return_value = mock_image
     assert dataset.read_image('image.png', color=False, resolution=(100, 50)).shape == (50, 100)
+
+
+def test_to_l_ab():
+    image = np.random.random((2, 2, 3)).astype(np.float32)
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2Lab)
+    expected_l, expected_ab = lab[:, :, 0], lab[:, :, 1:]
+    expected_l -= 50  # mean centering
+    l, ab = dataset.to_lab(image)
+    assert np.allclose(l, expected_l, rtol=.15)
+    assert np.allclose(ab, expected_ab, rtol=.15)
+
+
+def test_lab_to_bgr():
+    image = np.random.random((2, 2, 3)).astype(np.float32)
+    assert np.allclose(dataset.lab_to_bgr(*dataset.to_lab(image)), image)
 
 
 def test_get_frames():
