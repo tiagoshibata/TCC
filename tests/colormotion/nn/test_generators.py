@@ -24,7 +24,7 @@ def test__load_batch(mock__load_sample):
     state = [np.random.random((32, 32, 3)) for _ in range(3)]
     grayscale = [np.random.random((32, 32, 1)) for _ in range(3)]
     y = [np.random.random((32, 32, 2)) for _ in range(3)]
-    mock__load_sample.side_effect = lambda _, start_frame, __: (state[start_frame], grayscale[start_frame], y[start_frame])
+    mock__load_sample.side_effect = lambda _, frame, __: (state[frame], grayscale[frame], y[frame])
 
     generator = generators.VideoFramesDataGenerator()
     x_batch, y_batch = generator._load_batch([('scene', 0), ('scene', 1), ('other_scene', 2)], (32, 32))
@@ -34,7 +34,8 @@ def test__load_batch(mock__load_sample):
         call('scene', 1, (32, 32)),
         call('other_scene', 2, (32, 32)),
     ])
-    # Should have two inputs (state and grayscale) and one output, each with 3 elements, matching the list given to _load_batch
+    # Should have two inputs (state, grayscale) and one output, each with 3 elements, matching the list given to
+    # _load_batch
     assert (x_batch[0] == np.array(state)).all()
     assert (x_batch[1] == np.array(grayscale)).all()
     assert (y_batch == np.array(y)).all()
