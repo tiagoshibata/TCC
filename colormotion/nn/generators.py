@@ -45,7 +45,7 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
         grayscale, y = dataset.to_l_ab(last_frame)
         grayscale, y = self.rescale * grayscale, self.rescale * y
         state = [
-            self.rescale * read_image(scene, start_frame + i)
+            self.rescale * read_image(scene, start_frame + i)  # FIXME call to_l_ab on the image
             for i in range(self.contiguous_count)
         ]
         return state + [grayscale, y]
