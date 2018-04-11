@@ -46,7 +46,10 @@ def test_to_lab():
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2Lab)
     expected_l, expected_ab = lab[:, :, 0], lab[:, :, 1:]
     expected_l -= 50  # mean centering
+    expected_l = expected_l.reshape(2, 2, 1)
     l, ab = dataset.to_lab(image)
+    assert l.shape == (2, 2, 1)
+    assert ab.shape == (2, 2, 2)
     assert np.allclose(l, expected_l, rtol=.15)
     assert np.allclose(ab, expected_ab, rtol=.15)
 
