@@ -41,7 +41,7 @@ def test_read_image(mock_imread):
     assert dataset.read_image('image.png', color=False, resolution=(100, 50)).shape == (50, 100)
 
 
-def test_to_l_ab():
+def test_to_lab():
     image = np.random.random((2, 2, 3)).astype(np.float32)
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2Lab)
     expected_l, expected_ab = lab[:, :, 0], lab[:, :, 1:]

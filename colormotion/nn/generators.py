@@ -40,7 +40,7 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
         # y = expected colorization in last frame
         # x = previous frames colorized and current frame in grayscale
         last_frame = read_image(scene, start_frame + self.contiguous_count)
-        grayscale, y = dataset.to_l_ab(last_frame)
+        grayscale, y = dataset.to_lab(last_frame)
         state = [
             read_image(scene, start_frame + i)  # FIXME call to_l_ab on the image
             for i in range(self.contiguous_count)
