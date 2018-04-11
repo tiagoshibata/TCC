@@ -34,15 +34,15 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
 
     def _load_sample(self, scene, start_frame, target_size):
         '''Load a sample to build a batch.'''
-        def read_image(scene, frame_number):
-            return dataset.read_image(str(dataset.get_frame_path(scene, frame_number)), resolution=target_size)
+        def read_image_lab(scene, frame_number):
+            bgr_image = dataset.read_image(str(dataset.get_frame_path(scene, frame_number)), resolution=target_size)
+            return dataset.to_lab(bgr_image)
 
         # y = expected colorization in last frame
         # x = previous frames colorized and current frame in grayscale
-        last_frame = read_image(scene, start_frame + self.contiguous_count)
-        grayscale, y = dataset.to_lab(last_frame)
+        grayscale, y = read_image_lab(scene, start_frame + self.contiguous_count)
         state = [
-            read_image(scene, start_frame + i)  # FIXME call to_l_ab on the image
+            np.dstack(read_image_lab(scene, start_frame + i))
             for i in range(self.contiguous_count)
         ]
         return state + [grayscale, y]
