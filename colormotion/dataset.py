@@ -58,7 +58,7 @@ def to_lab(image):
     l, ab = lab[:, :, 0], lab[:, :, 1:]
     l -= 50  # mean centering
     # Reshape to enforce three dimensions, even if last one has a single element (required by Keras)
-    l.reshape(*l.shape, 1)
+    l = l.reshape(*l.shape, 1)
     return l, ab
 
 
