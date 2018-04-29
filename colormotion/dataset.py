@@ -10,11 +10,9 @@ from colormotion.environment import fail
 
 
 def hash_file(filename):
-    digest = hashlib.blake2b(digest_size=20)
+    '''Hash of the first 32KB of a file.'''
     with open(filename, 'rb') as f:
-        for chunk in iter(lambda: f.read(8192), b''):
-            digest.update(chunk)
-    return digest.hexdigest()
+        return hashlib.blake2b(f.read(32 * 1024), digest_size=20).hexdigest()
 
 
 def create_video_destination_folder(video_filename, root):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, mock_open, patch
 
 import cv2
 import numpy as np
@@ -11,7 +11,20 @@ import colormotion.dataset as dataset
 base_dir = Path(__file__).resolve().parent
 
 
-@pytest.mark.parametrize("dataset_directory,scene_number,expected", [
+def test_hash_file():
+    data = b'stubdata' * 2 * 1024  # 16 KB of data
+    with patch("builtins.open", mock_open(read_data=data)) as mock_file:
+        small_hash = dataset.hash_file('stub_filename.mp4')
+        mock_file.assert_called_once_with('stub_filename.mp4', 'rb')
+        assert len(small_hash) == 20 * 2
+    data = 2 * data  # 32 KB of data
+    with patch("builtins.open", mock_open(read_data=data)) as mock_file:
+        big_hash = dataset.hash_file('stub_filename.mp4')
+        assert len(big_hash) == 20 * 2
+        assert big_hash != small_hash
+
+
+@pytest.mark.parametrize('dataset_directory,scene_number,expected', [
     ('dataset', 1, 'dataset/000001'),
     (Path('dataset'), 2, 'dataset/000002'),
 ])
@@ -21,7 +34,7 @@ def test_get_scene_directory(mock_mkdir, dataset_directory, scene_number, expect
     mock_mkdir.called_once_with(ANY, exist_ok=True)
 
 
-@pytest.mark.parametrize("scene_directory,frame_number,expected", [
+@pytest.mark.parametrize('scene_directory,frame_number,expected', [
     ('dataset/scene', 1, 'dataset/scene/000001.png'),
     (Path('dataset/scene'), 2, 'dataset/scene/000002.png'),
 ])
