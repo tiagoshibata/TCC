@@ -34,7 +34,7 @@ class ConsumerPool(ThreadPool):
     def thread(self):
         while True:
             job = self.queue.get()
-            if not job:
+            if job is None:
                 break
             self.function(job)
             self.queue.task_done()
@@ -75,7 +75,7 @@ class ProducerPool(ThreadPool):
             while self.running:
                 self.queue.put(next(generator))
         except StopIteration:
-            pass
+            self.queue.put(None)
 
     def clear_queue(self):
         try:
