@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import OrderedDict
 import hashlib
 from pathlib import Path
 
@@ -26,9 +27,11 @@ def create_video_destination_folder(video_filename, root):
     return video_destination
 
 
-def get_scene_directory(root, scene_number):
+def get_scene_directory(root, scene):
     # TODO Split train and validation datasets
-    directory = Path(root) / '{:06d}'.format(scene_number)
+    if isinstance(scene, int):
+        scene = '{:06d}'.format(scene)
+    directory = Path(root, scene)
     directory.mkdir(exist_ok=True)
     return directory
 
@@ -66,7 +69,14 @@ def lab_to_bgr(l, ab):
     return skimage.color.lab2rgb(lab)[:, :, ::-1]
 
 
-def get_frames(root):
-    return {scene: sorted(int(frame.stem) for frame in scene.iterdir())
-            for movie in Path(root).iterdir()
-            for scene in movie.iterdir()}
+def get_scenes(movie_directory):
+    scenes = {scene: sorted(int(frame.stem) for frame in scene.iterdir())
+              for scene in Path(movie_directory).iterdir()}
+    return OrderedDict(sorted(scenes.items()))
+
+
+def get_all_scenes(dataset_directory):
+    scenes = {scene: frames
+              for movie in Path(dataset_directory).iterdir()
+              for scene, frames in get_scenes(movie).items()}
+    return OrderedDict(sorted(scenes.items()))

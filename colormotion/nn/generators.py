@@ -19,7 +19,7 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
         self.contiguous_count = contiguous_count
 
     def flow_from_directory(self, root, batch_size=32, target_size=None, seed=None):
-        contiguous_frames = self._get_contiguous_frames(dataset.get_frames(root))
+        contiguous_frames = self._get_contiguous_frames(dataset.get_all_scenes(root))
         random = Random(seed)
         while True:
             yield self._load_batch(random.choices(contiguous_frames, k=batch_size),

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import OrderedDict
 from pathlib import Path
 from unittest.mock import ANY, mock_open, patch
 
@@ -63,7 +64,7 @@ def test_to_lab():
     l, ab = dataset.to_lab(image)
     assert l.shape == (2, 2, 1)
     assert ab.shape == (2, 2, 2)
-    assert np.allclose(l, expected_l, rtol=.15)
+    assert np.allclose(l, expected_l, rtol=.2)
     assert np.allclose(ab, expected_ab, rtol=.2)
 
 
@@ -72,9 +73,10 @@ def test_lab_to_bgr():
     assert np.allclose(dataset.lab_to_bgr(*dataset.to_lab(image)), image, rtol=1e-3)
 
 
-def test_get_frames():
+def test_get_all_scenes():
     dataset_directory = base_dir / 'test_dataset'
-    assert dataset.get_frames(dataset_directory) == {
-        dataset_directory / 'movie/000000': [0, 1],
-        dataset_directory / 'movie/000002': [2],
-    }
+    frames = dataset.get_all_scenes(dataset_directory)
+    assert frames == OrderedDict([
+        (dataset_directory / 'movie/000000', [0, 1]),
+        (dataset_directory / 'movie/000002', [2]),
+    ])

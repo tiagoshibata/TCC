@@ -3,7 +3,7 @@ import argparse
 from collections import defaultdict
 import json
 
-from colormotion.dataset import get_frames
+from colormotion.dataset import get_all_scenes
 
 
 def parse_args():
@@ -27,7 +27,7 @@ def build_metadata(dataset):
 
 
 def main(args):
-    dataset = get_frames(args.dataset)
+    dataset = get_all_scenes(args.dataset)
     metadata = build_metadata(dataset)
     with open(args.metadata, 'w') as f:
         json.dump(metadata, f)
