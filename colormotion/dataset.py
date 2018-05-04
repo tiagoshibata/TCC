@@ -27,12 +27,13 @@ def create_video_destination_folder(video_filename, root):
     return video_destination
 
 
-def get_scene_directory(root, scene):
+def get_scene_directory(root, scene, mkdir=True):
     # TODO Split train and validation datasets
     if isinstance(scene, int):
         scene = '{:06d}'.format(scene)
     directory = Path(root, scene)
-    directory.mkdir(exist_ok=True)
+    if mkdir:
+        directory.mkdir(exist_ok=True)
     return directory
 
 
