@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from keras.initializers import RandomNormal
 from keras.layers import Activation, Add, AveragePooling2D, BatchNormalization, Conv2D, Conv2DTranspose, Input, Lambda
 from keras.layers.advanced_activations import LeakyReLU
