@@ -30,6 +30,12 @@ class ConsumerPool(ThreadPool):
         # ConsumerPool.put will put into its queue
         self.put = self.queue.put
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.join()
+
     def thread(self):
         while True:
             job = self.queue.get()
