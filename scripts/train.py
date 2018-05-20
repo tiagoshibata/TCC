@@ -28,15 +28,17 @@ def data_generators(dataset_folder):
 def main(args):
     train_generator, test_generator = data_generators(args.dataset)
     m = model.previous_frame_input()
-    m.fit_generator(
+    fit = m.fit_generator(
         train_generator,
-        steps_per_epoch=2000,
+        steps_per_epoch=100,
         epochs=50,
         validation_data=test_generator,
         validation_steps=800)
-    score = m.evaluate(...)
-    print('Test loss:', score[0])
-    print('Test accuracy:', score[1])
+    print(fit.history)
+    m.save('Colorful_model.h5')
+    # score = m.evaluate(...)
+    # print('Test loss:', score[0])
+    # print('Test accuracy:', score[1])
 
 
 if __name__ == '__main__':
