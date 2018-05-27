@@ -6,7 +6,7 @@ from keras.models import Model, Sequential
 from colormotion.nn.layers import Scale
 
 
-def previous_frame_input():  # pylint: disable=too-many-statements
+def interactive_colorization():  # pylint: disable=too-many-statements
     '''Model receiving the previous frame and current L value as input.
 
     Based on Real-Time User-Guided Image Colorization with Learned Deep Priors (R. Zhang et al).
@@ -23,68 +23,68 @@ def previous_frame_input():  # pylint: disable=too-many-statements
 
     # conv1
     # conv1_1
-    state = Conv2D(64, 3, padding='same')(state_input)
-    x = Conv2D(64, 3, padding='same')(l_input)
+    state = Conv2D(64, 3, padding='same', name='ab_conv1_1')(state_input)
+    x = Conv2D(64, 3, padding='same', name='bw_conv1_1')(l_input)
     x = Add()([state, x])
     x = Activation('relu')(x)
     # conv1_2
-    x = Conv2D_default(64)(x)
-    conv1_2norm = BatchNormalization()(x)
+    x = Conv2D_default(64, name='conv1_2')(x)
+    conv1_2norm = BatchNormalization(name='conv1_2norm')(x)
     x = Downscale()(x)
 
     # conv2
     # conv2_1
-    x = Conv2D_default(128)(x)
+    x = Conv2D_default(128, name='conv2_1')(x)
     # conv2_2
-    x = Conv2D_default(128)(x)
-    conv2_2norm = BatchNormalization()(x)
+    x = Conv2D_default(128, name='conv2_2')(x)
+    conv2_2norm = BatchNormalization(name='conv2_2norm')(x)
     x = Downscale()(x)
 
     # conv3
     # conv3_1
-    x = Conv2D_default(256)(x)
+    x = Conv2D_default(256, name='conv3_1')(x)
     # conv3_2
-    x = Conv2D_default(256)(x)
+    x = Conv2D_default(256, name='conv3_2')(x)
     # conv3_3
-    x = Conv2D_default(256)(x)
-    conv3_3_norm = BatchNormalization()(x)
+    x = Conv2D_default(256, name='conv3_3')(x)
+    conv3_3_norm = BatchNormalization(name='conv3_3norm')(x)
     x = Downscale()(x)
 
     # conv4
     # conv4_1
-    x = Conv2D_default(512)(x)
+    x = Conv2D_default(512, name='conv4_1')(x)
     # conv4_2
-    x = Conv2D_default(512)(x)
+    x = Conv2D_default(512, name='conv4_2')(x)
     # conv4_3
-    x = Conv2D_default(512)(x)
-    x = BatchNormalization()(x)
+    x = Conv2D_default(512, name='conv4_3')(x)
+    x = BatchNormalization(name='conv4_3norm')(x)
 
     # conv5
     # conv5_1
-    x = Conv2D_default(512, dilation_rate=2)(x)
+    x = Conv2D_default(512, dilation_rate=2, name='conv5_1')(x)
     # conv5_2
-    x = Conv2D_default(512, dilation_rate=2)(x)
+    x = Conv2D_default(512, dilation_rate=2, name='conv5_2')(x)
     # conv5_3
-    x = Conv2D_default(512, dilation_rate=2)(x)
-    x = BatchNormalization()(x)
+    x = Conv2D_default(512, dilation_rate=2, name='conv5_3')(x)
+    x = BatchNormalization(name='conv5_3norm')(x)
 
     # conv6
     # conv6_1
-    x = Conv2D_default(512, dilation_rate=2)(x)
+    x = Conv2D_default(512, dilation_rate=2, name='conv6_1')(x)
     # conv6_2
-    x = Conv2D_default(512, dilation_rate=2)(x)
+    x = Conv2D_default(512, dilation_rate=2, name='conv6_2')(x)
     # conv6_3
-    x = Conv2D_default(512, dilation_rate=2)(x)
-    x = BatchNormalization()(x)
+    x = Conv2D_default(512, dilation_rate=2, name='conv6_3')(x)
+    x = BatchNormalization(name='conv6_3norm')(x)
 
     # conv7
     # conv7_1
-    x = Conv2D_default(512)(x)
+    x = Conv2D_default(512, name='conv7_1')(x)
     # conv7_2
-    x = Conv2D_default(512)(x)
+    x = Conv2D_default(512, name='conv7_2')(x)
     # conv7_3
-    x = Conv2D_default(512)(x)
-    x = BatchNormalization()(x)
+    x = Conv2D_default(512, name='conv7_3')(x)
+    x = BatchNormalization(name='conv7_3norm')(x)
 
     # Shortcuts, transpose convolutions and some convolutions use a custom initializer
     custom_initializer = {
@@ -94,40 +94,40 @@ def previous_frame_input():  # pylint: disable=too-many-statements
 
     # conv8
     # conv8_1
-    x = Conv2DTranspose(256, 4, padding='same', strides=2)(x)
+    x = Conv2DTranspose(256, 4, padding='same', strides=2, name='conv8_1')(x)
     # Shortcut
-    shortcut = Conv2D(256, 3, padding='same', **custom_initializer)(conv3_3_norm)
+    shortcut = Conv2D(256, 3, padding='same', **custom_initializer, name='conv3_3_short')(conv3_3_norm)
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
     # conv8_2
-    x = Conv2D_default(256)(x)
+    x = Conv2D_default(256, name='conv8_2')(x)
     # conv8_3
-    x = Conv2D_default(256)(x)
-    x = BatchNormalization()(x)
+    x = Conv2D_default(256, name='conv8_3')(x)
+    x = BatchNormalization(name='conv8_3norm')(x)
 
     # conv9
     # conv9_1
-    x = Conv2DTranspose(128, 4, padding='same', strides=2, **custom_initializer)(x)
+    x = Conv2DTranspose(128, 4, padding='same', strides=2, **custom_initializer, name='conv9_1')(x)
     # Shortcut
-    shortcut = Conv2D(128, 3, padding='same', **custom_initializer)(conv2_2norm)
+    shortcut = Conv2D(128, 3, padding='same', **custom_initializer, name='conv2_2_short')(conv2_2norm)
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
     # conv9_2
-    x = Conv2D_default(128, **custom_initializer)(x)
-    x = BatchNormalization()(x)
+    x = Conv2D_default(128, **custom_initializer, name='conv9_2')(x)
+    x = BatchNormalization(name='conv9_2norm')(x)
 
     # conv10
     # conv10_1
-    x = Conv2DTranspose(128, 4, padding='same', strides=2, **custom_initializer)(x)
+    x = Conv2DTranspose(128, 4, padding='same', strides=2, **custom_initializer, name='conv10_1')(x)
     # Shortcut
-    shortcut = Conv2D(128, 3, padding='same', **custom_initializer)(conv1_2norm)
+    shortcut = Conv2D(128, 3, padding='same', **custom_initializer, name='conv1_2_short')(conv1_2norm)
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
     # conv10_2
-    x = Conv2D(128, 3, padding='same', **custom_initializer)(x)
+    x = Conv2D(128, 3, padding='same', **custom_initializer, name='conv10_2')(x)
     x = LeakyReLU(alpha=.2)(x)
     # conv10_ab
-    x = Conv2D(2, 1, activation='tanh')(x)
+    x = Conv2D(2, 1, activation='tanh', name='conv10_ab')(x)
     x = Scale(100)(x)
 
     m = Model(inputs=[state_input, l_input], outputs=x)
