@@ -161,8 +161,7 @@ def interactive_colorization(weights_path=None):  # pylint: disable=too-many-sta
     m = Model(inputs=[state_input, l_input], outputs=x)
     # TODO Another loss function might be more appropriate
     m.compile(loss='mean_squared_error',
-              optimizer='adam',
-              metrics=['accuracy'])
+              optimizer='adam')
 
     if weights_path:
         load_weights(m, weights_path)
