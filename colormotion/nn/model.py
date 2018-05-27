@@ -6,19 +6,30 @@ from keras.models import Model, Sequential
 from colormotion.nn.layers import Scale
 
 
+def load_weights_numpy(model, weights_path):
+    import numpy as np
+    weight_order = {
+        ('weights', 'bias'),
+        ('mean', 'var'),
+    }
+    weights_data = np.load(str(weights_path)).item()
+    for layer in model.layers:
+        weights = weights_data.pop(layer.name, None)
+        if weights:
+            order = next((x for x in weight_order if set(x) == set(weights.keys())), None)
+            if not order:
+                raise NotImplementedError("Can't load layer {} with params {}".format(layer.name, weights))
+            layer.set_weights([weights[x] for x in order])
+        else:
+            print('Layer {} has no pretrained weights'.format(layer.name))
+    if weights_data:
+        print('The following layers are in the weights file, but have no corresponding '
+              'layer in the model: {}'.format(weights_data.keys()))
+
+
 def load_weights(model, weights_path):
     if weights_path.suffix == '.npy':
-        import numpy as np
-        weights_data = np.load(str(weights_path)).item()
-        for layer in model.layers:
-            weights = weights_data.pop(layer.name, None)
-            if weights:
-                layer.set_weights((weights['weights'], weights['bias']))
-            else:
-                print('Layer {} has no pretrained weights'.format(layer.name))
-        if weights_data:
-            print('The following layers are in the weights file, but have no corresponding '
-                  'layer in the model: {}'.format(weights_data.keys()))
+        load_weights_numpy(model, weights_path)
     else:
         raise NotImplementedError()
 
