@@ -6,7 +6,24 @@ from keras.models import Model, Sequential
 from colormotion.nn.layers import Scale
 
 
-def interactive_colorization():  # pylint: disable=too-many-statements
+def load_weights(model, weights_path):
+    if weights_path.suffix == '.npy':
+        import numpy as np
+        weights_data = np.load(str(weights_path)).item()
+        for layer in model.layers:
+            weights = weights_data.pop(layer.name, None)
+            if weights:
+                layer.set_weights((weights['weights'], weights['bias']))
+            else:
+                print('Layer {} has no pretrained weights'.format(layer.name))
+        if weights_data:
+            print('The following layers are in the weights file, but have no corresponding '
+                  'layer in the model: {}'.format(weights_data.keys()))
+    else:
+        raise NotImplementedError()
+
+
+def interactive_colorization(weights_path=None):  # pylint: disable=too-many-statements
     '''Model receiving the previous frame and current L value as input.
 
     Based on Real-Time User-Guided Image Colorization with Learned Deep Priors (R. Zhang et al).
@@ -135,6 +152,9 @@ def interactive_colorization():  # pylint: disable=too-many-statements
     m.compile(loss='mean_squared_error',
               optimizer='adam',
               metrics=['accuracy'])
+
+    if weights_path:
+        load_weights(m, weights_path)
     return m
 
 

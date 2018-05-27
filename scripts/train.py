@@ -27,7 +27,7 @@ def data_generators(dataset_folder):
 
 def main(args):
     train_generator, test_generator = data_generators(args.dataset)
-    m = model.previous_frame_input()
+    m = model.interactive_colorization()
     fit = m.fit_generator(
         train_generator,
         steps_per_epoch=100,
