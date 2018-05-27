@@ -18,6 +18,9 @@ def previous_frame_input():  # pylint: disable=too-many-statements
         '''Conv2D block with most commonly used options.'''
         return Conv2D(filters, 3, padding='same', activation='relu', **kwargs)
 
+    def Downscale():  # pylint: disable=invalid-name
+        return AveragePooling2D(pool_size=1, strides=2)
+
     # conv1
     # conv1_1
     state = Conv2D(64, 3, padding='same')(state_input)
@@ -27,9 +30,7 @@ def previous_frame_input():  # pylint: disable=too-many-statements
     # conv1_2
     x = Conv2D_default(64)(x)
     conv1_2norm = BatchNormalization()(x)
-    x = AveragePooling2D()(x)
-    # TODO Real-Time User-Guided Image Colorization with Learned Deep Priors uses a different method to half the
-    # spatial dimension: it samples each input 2d tensor with stride 2 instead of pooling the average.
+    x = Downscale()(x)
 
     # conv2
     # conv2_1
@@ -37,7 +38,7 @@ def previous_frame_input():  # pylint: disable=too-many-statements
     # conv2_2
     x = Conv2D_default(128)(x)
     conv2_2norm = BatchNormalization()(x)
-    x = AveragePooling2D()(x)
+    x = Downscale()(x)
 
     # conv3
     # conv3_1
@@ -47,7 +48,7 @@ def previous_frame_input():  # pylint: disable=too-many-statements
     # conv3_3
     x = Conv2D_default(256)(x)
     conv3_3_norm = BatchNormalization()(x)
-    x = AveragePooling2D()(x)
+    x = Downscale()(x)
 
     # conv4
     # conv4_1
@@ -113,8 +114,6 @@ def previous_frame_input():  # pylint: disable=too-many-statements
     x = Activation('relu')(x)
     # conv9_2
     x = Conv2D_default(128, **custom_initializer)(x)
-    # conv9_3
-    x = Conv2D_default(128)(x)
     x = BatchNormalization()(x)
 
     # conv10

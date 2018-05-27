@@ -64,8 +64,8 @@ def test_to_lab():
     l, ab = dataset.to_lab(image)
     assert l.shape == (2, 2, 1)
     assert ab.shape == (2, 2, 2)
-    assert np.allclose(l, expected_l, rtol=.2)
-    assert np.allclose(ab, expected_ab, rtol=.2)
+    assert np.allclose(l, expected_l, rtol=.3)
+    assert np.allclose(ab, expected_ab, rtol=.3)
 
 
 def test_lab_to_bgr():
