@@ -30,6 +30,8 @@ def load_weights_numpy(model, weights_path):
 def load_weights(model, weights_path):
     if weights_path.suffix == '.npy':
         load_weights_numpy(model, weights_path)
+    elif weights_path.suffix == '.h5':
+        model.load_weights(str(weights_path))
     else:
         raise NotImplementedError()
 
