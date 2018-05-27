@@ -3,12 +3,13 @@ import argparse
 from collections import defaultdict
 import json
 
+from colormotion.argparse import directory_path
 from colormotion.dataset import get_all_scenes
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Save metadata containing scene start/end frames.')
-    parser.add_argument('dataset', help='dataset folder')
+    parser.add_argument('dataset', type=directory_path, help='dataset folder')
     parser.add_argument('metadata', help='output file')
     return parser.parse_args()
 

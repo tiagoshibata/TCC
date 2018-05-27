@@ -34,7 +34,7 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
     def _load_sample(self, scene, start_frame, target_size):
         '''Load a sample to build a batch.'''
         def read_image_lab(scene, frame_number):
-            bgr_image = dataset.read_image(str(dataset.get_frame_path(scene, frame_number)), resolution=target_size)
+            bgr_image = dataset.read_image(dataset.get_frame_path(scene, frame_number), resolution=target_size)
             return dataset.to_lab(bgr_image)
 
         # y = expected colorization in last frame

@@ -2,10 +2,10 @@
 import argparse
 from itertools import count
 import json
-from pathlib import Path
 
 import cv2
 
+from colormotion.argparse import directory_path
 import colormotion.dataset as dataset
 from colormotion.threading import ConsumerPool
 
@@ -13,9 +13,9 @@ from colormotion.threading import ConsumerPool
 def parse_args():
     parser = argparse.ArgumentParser(description='Build dataset from metadata files.')
     parser.add_argument('--resolution', type=int, nargs=2, default=(256, 256), help='output resolution')
-    parser.add_argument('movies', help='movies directory')
-    parser.add_argument('metadata', help='metadata directory')
-    parser.add_argument('dataset', help='dataset output directory')
+    parser.add_argument('movies', type=directory_path, help='movies directory')
+    parser.add_argument('metadata', type=directory_path, help='metadata directory')
+    parser.add_argument('dataset', type=directory_path, help='dataset output directory')
     return parser.parse_args()
 
 
@@ -64,7 +64,7 @@ def build_dataset_from_metadata(movies_path, metadata_path, dataset_path, resolu
 
 
 def main(args):
-    build_dataset_from_metadata(Path(args.movies), Path(args.metadata), Path(args.dataset), args.resolution)
+    build_dataset_from_metadata(args.movies, args.metadata, args.dataset, args.resolution)
 
 
 if __name__ == '__main__':

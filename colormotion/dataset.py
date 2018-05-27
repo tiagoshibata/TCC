@@ -42,7 +42,7 @@ def get_frame_path(*args):
 
 
 def read_image(filename, color=True, resolution=None):
-    image = cv2.imread(filename, color and cv2.IMREAD_COLOR or cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread(str(filename), color and cv2.IMREAD_COLOR or cv2.IMREAD_GRAYSCALE)
     if image is None:
         raise RuntimeError('Cannot read image {}'.format(filename))
     if resolution:

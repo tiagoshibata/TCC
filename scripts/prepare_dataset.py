@@ -8,6 +8,7 @@ import time
 import cv2
 from skimage.measure import compare_ssim
 
+from colormotion.argparse import directory_path
 import colormotion.dataset as dataset
 from colormotion.threading import ConsumerPool, ProducerPool
 
@@ -15,7 +16,7 @@ from colormotion.threading import ConsumerPool, ProducerPool
 def parse_args():
     parser = argparse.ArgumentParser(description='Prepares a dataset for training.')
     parser.add_argument('source', help='source video')
-    parser.add_argument('destination', help='destination directory')
+    parser.add_argument('destination', type=directory_path, help='destination directory')
     parser.add_argument('--resolution', type=int, nargs=2, help='output resolution')
     parser.add_argument('--verbose', '-v', action='count',
                         help='verbose mode (GUI output of each frame). If given twice, stop at each frame')

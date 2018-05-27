@@ -3,13 +3,14 @@ import argparse
 import random
 import sys
 
+from colormotion.argparse import directory_path
 from colormotion.nn.generators import VideoFramesDataGenerator
 import colormotion.nn.model as model
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Run training.')
-    parser.add_argument('dataset', help='dataset folder')
+    parser.add_argument('dataset', type=directory_path, help='dataset folder')
     return parser.parse_args()
 
 

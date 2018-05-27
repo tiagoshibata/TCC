@@ -4,12 +4,13 @@ from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
 
+from colormotion.argparse import directory_path
 import colormotion.dataset as dataset
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Review existing dataset.')
-    parser.add_argument('movie', help='movie directory')
+    parser.add_argument('movie', type=directory_path, help='movie directory')
     parser.add_argument('--skip', type=int, default=0, help='number of frames to skip from review')
     parser.add_argument('--viewer', default='xdg-open', help='directory viewer')
     return parser.parse_args()
@@ -98,7 +99,7 @@ def review_dataset(movie_directory, viewer, frames_to_skip=0):
 
 
 def main(args):
-    review_dataset(Path(args.movie), args.viewer, frames_to_skip=args.skip)
+    review_dataset(args.movie, args.viewer, frames_to_skip=args.skip)
 
 
 if __name__ == '__main__':
