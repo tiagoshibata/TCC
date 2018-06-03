@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from pathlib import Path
 import random
 import sys
 
@@ -10,6 +11,7 @@ import colormotion.nn.model as model
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Run training.')
+    parser.add_argument('--weights', type=Path, help='weights file')
     parser.add_argument('dataset', type=directory_path, help='dataset folder')
     return parser.parse_args()
 
@@ -28,13 +30,13 @@ def data_generators(dataset_folder):
 
 def main(args):
     train_generator, test_generator = data_generators(args.dataset)
-    m = model.interactive_colorization()
+    m = model.interactive_colorization(weights_path=args.weights)
     fit = m.fit_generator(
         train_generator,
-        steps_per_epoch=100,
-        epochs=50,
+        steps_per_epoch=2000,
+        epochs=80,
         validation_data=test_generator,
-        validation_steps=800)
+        validation_steps=10)
     print(fit.history)
     m.save('Colorful_model.h5')
     # score = m.evaluate(...)
