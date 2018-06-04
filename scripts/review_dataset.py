@@ -41,7 +41,6 @@ def merge_frames(movie_directory, frames):
     '''Merge a list of frames into the same scene.
 
     The lowest numbered frame must be at the beginning of a scene.'''
-    frames = sorted(frames)
     merge_to_scene = dataset.get_scene_directory(movie_directory, frames[0].stem)
     for frame in frames:
         if (merge_to_scene / frame.name).exists():
@@ -69,7 +68,7 @@ def merge_short_scenes(movie_directory, scene_frames, viewer):
                         preview.symlink_to(frame.resolve())
             else:
                 scene = next_scene
-                frames = temporary_directory.iterdir()
+                frames = sorted(temporary_directory.iterdir())
                 if not frames:
                     continue
                 if merge_prompt(temporary_directory, viewer=viewer):
@@ -85,13 +84,11 @@ def review_dataset(movie_directory, viewer, frames_to_skip=0):
         for scene, frames in scenes.items()
         if not rmdir_if_empty(scene) and int(scene.name) >= frames_to_skip
     ]
-
     merge_short_scenes(movie_directory, scene_frames, viewer)
 
-    scene_ids = list(scenes)
-    if len(scene_ids) >= 2:
-        scene = scene_ids[0]
-        for next_scene in scene_ids[1:]:
+    if len(scene_frames) >= 2:
+        scene = scene_frames[0][0]
+        for next_scene, _ in scene_frames[1:]:
             if merge_prompt(scene, next_scene, viewer=viewer):
                 merge_frames(movie_directory, scenes[scene] + scenes[next_scene])
             else:
