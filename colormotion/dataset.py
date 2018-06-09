@@ -64,7 +64,21 @@ def to_lab(image):
 
 
 def lab_to_bgr(l, ab):
-    l += 50  # mean centering
+    # Undo mean centering in L channel
+    l = l.copy() + 50
+    # Check if L*a*b* value is valid, and adjust b channel if not
+    b = ab[:, :, 1:]
+    # Check in CIEXYZ colorspace (based on scikit's lab2xyz)
+    y = (l + 16.) / 116.
+    z = y - (b / 200.)
+    invalid = z < 0
+    if invalid.any():
+        print('Some L*a*b* values are invalid')
+        invalid = np.nonzero(invalid)
+        # TODO Adjust b[invalid]
+    # Optionally, OpenCV's implementation (in C) could be used. It might be faster:
+    # lab = np.dstack((l, ab)).astype(np.float32)
+    # return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
     lab = np.dstack((l, ab)).astype(np.float64)
     return skimage.color.lab2rgb(lab)[:, :, ::-1]
 

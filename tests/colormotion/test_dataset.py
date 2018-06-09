@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from collections import OrderedDict
+import copy
 from pathlib import Path
 from unittest.mock import ANY, mock_open, patch
 
@@ -69,8 +70,13 @@ def test_to_lab():
 
 
 def test_lab_to_bgr():
-    image = np.random.random((2, 2, 3)).astype(np.float32)
-    assert np.allclose(dataset.lab_to_bgr(*dataset.to_lab(image)), image, rtol=1e-3)
+    rgb_image = np.random.random((2, 2, 3)).astype(np.float32)
+    rgb_original_image = rgb_image.copy()
+    lab_image = dataset.to_lab(rgb_image)
+    assert (rgb_original_image == rgb_image).all()  # no conversions should be done in place
+    lab_original_image = copy.deepcopy(lab_image)
+    assert np.allclose(dataset.lab_to_bgr(*lab_image), rgb_image, rtol=1e-3)
+    assert all((original_channel == channel).all() for original_channel, channel in zip(lab_original_image, lab_image))
 
 
 def test_get_all_scenes():
