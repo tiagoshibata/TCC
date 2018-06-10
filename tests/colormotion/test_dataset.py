@@ -4,9 +4,9 @@ import copy
 from pathlib import Path
 from unittest.mock import ANY, mock_open, patch
 
-import cv2
 import numpy as np
 import pytest
+import skimage
 
 import colormotion.dataset as dataset
 
@@ -57,16 +57,15 @@ def test_read_image(mock_imread):
 
 
 def test_to_lab():
-    image = np.random.random((2, 2, 3)).astype(np.float32)
-    lab = cv2.cvtColor(image, cv2.COLOR_BGR2Lab)
-    expected_l, expected_ab = lab[:, :, 0], lab[:, :, 1:]
+    bgr = np.random.random((2, 2, 3)).astype(np.float32)
+    lab = skimage.color.rgb2lab(bgr[:, :, ::-1])
+    expected_l, expected_ab = lab[:, :, 0:1], lab[:, :, 1:]
     expected_l -= 50  # mean centering
-    expected_l = expected_l.reshape(2, 2, 1)
-    l, ab = dataset.to_lab(image)
+    l, ab = dataset.to_lab(bgr)
     assert l.shape == (2, 2, 1)
     assert ab.shape == (2, 2, 2)
-    assert np.allclose(l, expected_l, rtol=.3)
-    assert np.allclose(ab, expected_ab, rtol=.3)
+    assert np.allclose(l, expected_l, rtol=.01)
+    assert np.allclose(ab, expected_ab, rtol=.01)
 
 
 def test_lab_to_bgr():
