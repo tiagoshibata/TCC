@@ -50,37 +50,35 @@ def read_image(filename, color=True, resolution=None):
     return (image / 255).astype(np.float32)
 
 
-def to_lab(image):
+def bgr_to_lab(image):
     '''Convert BGR image to L*a*b* colorspace.
 
     Return a tuple (l, ab), where l was mean centered.
     '''
-    lab = skimage.color.rgb2lab(image[:, :, ::-1]).astype(np.float32)
-    l, ab = lab[:, :, 0], lab[:, :, 1:]
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    l, ab = lab[:, :, 0:1], lab[:, :, 1:]
     l -= 50  # mean centering
-    # Reshape to enforce three dimensions, even if last one has a single element (required by Keras)
-    l = l.reshape(*l.shape, 1)
     return l, ab
 
 
-def lab_to_bgr(l, ab):
+def _lab_to_bgr(l, ab):
     # Undo mean centering in L channel
     l = l.copy() + 50
-    # Check if L*a*b* value is valid, and adjust b channel if not
-    b = ab[:, :, 1:]
-    # Check in CIEXYZ colorspace (based on scikit's lab2xyz)
-    y = (l + 16.) / 116.
-    z = y - (b / 200.)
-    invalid = z < 0
-    if invalid.any():
-        print('Some L*a*b* values are invalid')
-        invalid = np.nonzero(invalid)
-        # TODO Adjust b[invalid]
-    # Optionally, OpenCV's implementation (in C) could be used. It might be faster:
-    # lab = np.dstack((l, ab)).astype(np.float32)
-    # return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
-    lab = np.dstack((l, ab)).astype(np.float64)
-    return skimage.color.lab2rgb(lab)[:, :, ::-1]
+    lab = np.dstack((l, ab))
+    return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
+
+def lab_to_bgr(l, ab):
+    return _lab_to_bgr(l, ab)
+    # Hack to adjust a*b* channels so L*a*b* is in BGR gamut
+    # for _ in range(3):
+    #     bgr = np.clip(_lab_to_bgr(l, ab), 0, 1)
+    #     new_l, new_ab = bgr_to_lab(bgr)
+    #     error = np.sum(np.abs(new_l - l)) + np.sum(np.abs(new_ab - ab))
+    #     if error < 1:
+    #         break
+    #     ab = new_ab
+    # return bgr
 
 
 def get_scenes(movie_directory):

@@ -4,6 +4,7 @@ import copy
 from pathlib import Path
 from unittest.mock import ANY, mock_open, patch
 
+import cv2
 import numpy as np
 import pytest
 import skimage
@@ -56,26 +57,34 @@ def test_read_image(mock_imread):
     assert dataset.read_image('image.png', color=False, resolution=(100, 50)).shape == (50, 100)
 
 
-def test_to_lab():
-    bgr = np.random.random((2, 2, 3)).astype(np.float32)
-    lab = skimage.color.rgb2lab(bgr[:, :, ::-1])
-    expected_l, expected_ab = lab[:, :, 0:1], lab[:, :, 1:]
-    expected_l -= 50  # mean centering
-    l, ab = dataset.to_lab(bgr)
-    assert l.shape == (2, 2, 1)
-    assert ab.shape == (2, 2, 2)
-    assert np.allclose(l, expected_l, rtol=.01)
-    assert np.allclose(ab, expected_ab, rtol=.01)
+def test_bgr_to_lab():
+    bgr = np.random.random((256, 256, 3)).astype('float32')
+    l, ab = dataset.bgr_to_lab(bgr)
+    assert np.logical_and(-50 < l, l < 50).all()  # should be mean centered
+    assert l.shape == (256, 256, 1)
+    assert ab.shape == (256, 256, 2)
 
 
 def test_lab_to_bgr():
-    rgb_image = np.random.random((2, 2, 3)).astype(np.float32)
-    rgb_original_image = rgb_image.copy()
-    lab_image = dataset.to_lab(rgb_image)
-    assert (rgb_original_image == rgb_image).all()  # no conversions should be done in place
+    bgr_image = np.random.random((256, 256, 3)).astype(np.float32)
+    bgr_original_image = bgr_image.copy()
+    lab_image = dataset.bgr_to_lab(bgr_image)
+    # No conversions should be done in place and the bgr_image parameter should remain the same
+    assert (bgr_original_image == bgr_image).all()
     lab_original_image = copy.deepcopy(lab_image)
-    assert np.allclose(dataset.lab_to_bgr(*lab_image), rgb_image, rtol=1e-3)
+    assert np.allclose(dataset.lab_to_bgr(*lab_image), bgr_image, atol=1e-2)
     assert all((original_channel == channel).all() for original_channel, channel in zip(lab_original_image, lab_image))
+
+
+def test_lab_to_bgr_implementations():
+    # We want OpenCV in L*a*b->RGB conversion (since it's ~20 times faster than scikit), but it
+    # has to behave like scikit.
+    # Here we test whether both implementations return the same results within a small margin.
+    rgb = np.random.random((256, 256, 3))
+    lab = skimage.color.rgb2lab(rgb)
+    scikit_result = skimage.color.lab2rgb(lab)
+    opencv_result = cv2.cvtColor(lab.astype(np.float32), cv2.COLOR_LAB2RGB)
+    assert np.allclose(scikit_result, opencv_result, atol=5e-4)
 
 
 def test_get_all_scenes():
