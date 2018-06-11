@@ -72,7 +72,7 @@ def test_lab_to_bgr():
     # No conversions should be done in place and the bgr_image parameter should remain the same
     assert (bgr_original_image == bgr_image).all()
     lab_original_image = copy.deepcopy(lab_image)
-    assert np.allclose(dataset.lab_to_bgr(*lab_image), bgr_image, atol=1e-2)
+    assert np.allclose(dataset._lab_to_bgr(*lab_image), bgr_image, atol=1e-2)
     assert all((original_channel == channel).all() for original_channel, channel in zip(lab_original_image, lab_image))
 
 

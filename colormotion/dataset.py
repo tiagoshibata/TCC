@@ -4,7 +4,6 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-import skimage.color
 
 from colormotion.environment import fail
 
@@ -69,16 +68,15 @@ def _lab_to_bgr(l, ab):
 
 
 def lab_to_bgr(l, ab):
-    return _lab_to_bgr(l, ab)
     # Hack to adjust a*b* channels so L*a*b* is in BGR gamut
-    # for _ in range(3):
-    #     bgr = np.clip(_lab_to_bgr(l, ab), 0, 1)
-    #     new_l, new_ab = bgr_to_lab(bgr)
-    #     error = np.sum(np.abs(new_l - l)) + np.sum(np.abs(new_ab - ab))
-    #     if error < 1:
-    #         break
-    #     ab = new_ab
-    # return bgr
+    for _ in range(3):
+        bgr = np.clip(_lab_to_bgr(l, ab), 0, 1)
+        new_l, new_ab = bgr_to_lab(bgr)
+        error = np.sum(np.abs(new_l - l)) + np.sum(np.abs(new_ab - ab))
+        if error < 1:
+            break
+        ab = new_ab
+    return bgr
 
 
 def get_scenes(movie_directory):
