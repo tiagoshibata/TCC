@@ -7,7 +7,7 @@ from unittest.mock import ANY, mock_open, patch
 import cv2
 import numpy as np
 import pytest
-import skimage
+import skimage.color
 
 import colormotion.dataset as dataset
 
