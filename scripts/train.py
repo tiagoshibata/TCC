@@ -8,7 +8,8 @@ from keras.callbacks import ModelCheckpoint
 
 from colormotion.argparse import directory_path
 from colormotion.nn.generators import VideoFramesDataGenerator
-import colormotion.nn.model as model
+from colormotion.nn.layers import load_weights
+from colormotion.nn.model.recurrent_to_input import model
 
 
 def parse_args():
@@ -32,7 +33,9 @@ def data_generators(dataset_folder):
 
 def main(args):
     train_generator, test_generator = data_generators(args.dataset)
-    m = model.interactive_colorization(weights_path=args.weights)
+    m = model.interactive_colorization()
+    if args.weights:
+        load_weights(m, args.weights)
     checkpoint = ModelCheckpoint('epoch-{epoch:03d}-{val_loss:.3f}.hdf5', verbose=1, period=5)
     fit = m.fit_generator(
         train_generator,
