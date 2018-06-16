@@ -7,6 +7,11 @@ from keras.layers import Add, AveragePooling2D, BatchNormalization, Conv2D, Inpu
 from keras.models import Model
 
 
+def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
+    '''Conv2D block with most commonly used options.'''
+    return Conv2D(filters, 3, padding='same', activation='relu', **kwargs)
+
+
 def optical_flow(previous, current):  # pylint: disable=unused-argument
     raise NotImplementedError()
 
@@ -15,8 +20,10 @@ def warp(features, flow):  # pylint: disable=unused-argument
     raise NotImplementedError()
 
 
-def mask_network(difference):  # pylint: disable=unused-argument
-    raise NotImplementedError()
+def mask_network(difference):
+    x = Conv2D_default(16, name='mask_conv1')(difference)
+    x = Conv2D_default(32, name='mask_conv2')(x)
+    return Conv2D_default(1, name='mask_conv3')(x)
 
 
 def model():  # pylint: disable=too-many-statements,too-many-locals
@@ -26,10 +33,6 @@ def model():  # pylint: disable=too-many-statements,too-many-locals
 
     flow = optical_flow(l_input_tm1, l_input)
     warped_features = warp(features_tm1, flow)
-
-    def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
-        '''Conv2D block with most commonly used options.'''
-        return Conv2D(filters, 3, padding='same', activation='relu', **kwargs)
 
     def Downscale():  # pylint: disable=invalid-name
         return AveragePooling2D(pool_size=1, strides=2)
