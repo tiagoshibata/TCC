@@ -33,7 +33,7 @@ def data_generators(dataset_folder):
 
 def main(args):
     train_generator, test_generator = data_generators(args.dataset)
-    m = model.interactive_colorization()
+    m = model()
     if args.weights:
         load_weights(m, args.weights)
     checkpoint = ModelCheckpoint('epoch-{epoch:03d}-{val_loss:.3f}.hdf5', verbose=1, period=5)

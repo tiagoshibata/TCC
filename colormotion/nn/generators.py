@@ -26,10 +26,12 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
 
     def _load_batch(self, start_frames, target_size):
         samples = [self._load_sample(scene, frame, target_size) for scene, frame in start_frames]
-        state = np.array([i[0:-2] for i in samples]).transpose((1, 0, 2, 3, 4))
         grayscale = np.array([i[-2] for i in samples])
         y = np.array([i[-1] for i in samples])
-        return list(state) + [grayscale], y
+        if self.contiguous_count:
+            state = np.array([i[0:-2] for i in samples]).transpose((1, 0, 2, 3, 4))
+            return list(state) + [grayscale], y
+        return [grayscale], y
 
     def _load_sample(self, scene, start_frame, target_size):
         '''Load a sample to build a batch.'''
@@ -50,5 +52,6 @@ class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods
         # Remove frames at the end of a scene and discard too short scenes
         frames = [(directory, frame)
                   for directory, images in frames.items() if len(images) > self.contiguous_count
-                  for frame in images[:-self.contiguous_count]]
+                  # Use None (end of list) if contiguous_count == 0
+                  for frame in images[:-self.contiguous_count or None]]
         return frames
