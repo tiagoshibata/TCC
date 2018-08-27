@@ -20,7 +20,7 @@ def main(args):
         subprocess.check_call(['pip', 'install', '-Ir', requirements])
     else:
         print("No requirements.txt file found, versions aren't frozen!")
-    subprocess.check_call(['pip', 'install', '-e', str(base_dir)])
+    subprocess.check_call(['pip', 'install', '-Ie', str(base_dir)])
 
     os.execvp(args.command[0], args.command)
 
