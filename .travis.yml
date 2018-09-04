@@ -3,7 +3,6 @@ sudo: false
 dist: trusty
 python:
   - "3.6"
-  - "3.7"
 install:
   - pip install -Ir requirements.txt
   - pip install -e .[ci-test]
