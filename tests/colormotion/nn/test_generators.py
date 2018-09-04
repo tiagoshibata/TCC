@@ -2,7 +2,7 @@ from unittest.mock import call, patch
 
 import numpy as np
 
-import colormotion.nn.generators as generators
+from colormotion.nn import generators
 
 
 def test__get_contiguous_frames():

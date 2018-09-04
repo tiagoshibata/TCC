@@ -6,7 +6,7 @@ import json
 import cv2
 
 from colormotion.argparse import directory_path
-import colormotion.dataset as dataset
+from colormotion import dataset
 from colormotion.threading import ConsumerPool
 
 

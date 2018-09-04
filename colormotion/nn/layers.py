@@ -59,7 +59,7 @@ def load_weights(model, weights_path):
     suffix = weights_path.suffix
     if suffix == '.npy':
         _load_weights_numpy(model, weights_path)
-    elif suffix == '.h5' or suffix == '.hdf5':
+    elif suffix in ('.h5', '.hdf5'):
         model.load_weights(str(weights_path))
     else:
         raise NotImplementedError()

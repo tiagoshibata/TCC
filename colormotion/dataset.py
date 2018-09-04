@@ -11,7 +11,7 @@ from colormotion.environment import fail
 def hash_file(filename):
     '''Hash of the first 32KB of a file.'''
     with open(filename, 'rb') as f:
-        return hashlib.blake2b(f.read(32 * 1024), digest_size=20).hexdigest()
+        return hashlib.blake2b(f.read(32 * 1024), digest_size=20).hexdigest()  # pylint: disable=unexpected-keyword-arg
 
 
 def create_video_destination_folder(video_filename, root):

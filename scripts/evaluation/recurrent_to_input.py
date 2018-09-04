@@ -6,7 +6,7 @@ from keras.models import load_model
 import numpy as np
 
 from colormotion.argparse import directory_path
-import colormotion.dataset as dataset
+from colormotion import dataset
 
 
 def parse_args():

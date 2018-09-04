@@ -2,7 +2,7 @@ from random import Random
 
 import numpy as np
 
-import colormotion.dataset as dataset
+from colormotion import dataset
 
 
 class VideoFramesDataGenerator():  # pylint: disable=too-few-public-methods

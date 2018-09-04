@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import skimage.color
 
-import colormotion.dataset as dataset
+from colormotion import dataset
 
 base_dir = Path(__file__).resolve().parent
 
@@ -47,18 +47,18 @@ def test_get_frame_path(scene_directory, frame_number, expected):
 
 @patch('cv2.imread')
 def test_read_image(mock_imread):
-    mock_image = np.zeros((200, 200, 3), dtype='uint8')
+    mock_image = np.zeros((200, 200, 3), dtype=np.uint8)
     mock_imread.return_value = mock_image
     assert (dataset.read_image('image.png') == mock_image).all()
     assert dataset.read_image('image.png', resolution=(100, 50)).shape == (50, 100, 3)
 
-    mock_image = np.zeros((200, 200), dtype='uint8')
+    mock_image = np.zeros((200, 200), dtype=np.uint8)
     mock_imread.return_value = mock_image
     assert dataset.read_image('image.png', color=False, resolution=(100, 50)).shape == (50, 100)
 
 
 def test_bgr_to_lab():
-    bgr = np.random.random((256, 256, 3)).astype('float32')
+    bgr = np.random.random((256, 256, 3)).astype(np.float32)
     l, ab = dataset.bgr_to_lab(bgr)
     assert np.logical_and(-50 < l, l < 50).all()  # should be mean centered
     assert l.shape == (256, 256, 1)

@@ -1,4 +1,4 @@
-from keras import backend as backend
+from keras import backend
 from keras.layers import Input
 from keras.models import Sequential
 import numpy as np

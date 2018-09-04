@@ -5,7 +5,7 @@ import subprocess
 from tempfile import TemporaryDirectory
 
 from colormotion.argparse import directory_path
-import colormotion.dataset as dataset
+from colormotion import dataset
 
 
 def parse_args():
