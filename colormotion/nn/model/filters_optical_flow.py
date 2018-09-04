@@ -2,30 +2,16 @@
 
 Some concepts are taken from https://arxiv.org/abs/1703.09211.
 '''
-import cv2
 import keras.backend as K
 from keras.layers import Add, AveragePooling2D, BatchNormalization, Conv2D, Input, Multiply, Subtract
 from keras.models import Model
+
+from colormotion.optical_flow import optical_flow, warp
 
 
 def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
     '''Conv2D block with most commonly used options.'''
     return Conv2D(filters, 3, padding='same', activation='relu', **kwargs)
-
-
-def optical_flow(previous, current):
-    return cv2.calcOpticalFlowFarneback(previous, current, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-
-
-def warp(features, flow):
-    # Based on: https://stackoverflow.com/questions/16235955/create-a-multichannel-zeros-mat-in-python-with-cv2
-    # TODO Iterating through each pixel is slow, optimize this!
-    flow_map = np.zeros((*flow.shape, 2), dtype=np.float32)
-    for y in range(flow_map.shape[0]):
-        for x in range(flow_map.shape[1]):
-            local_flow = flow[y, x]
-            flow_map[y, x] = [x + local_flow[0], y + local_flow[1]]
-    return cv2.remap(features, flow_map)
 
 
 def mask_network(difference):

@@ -1,6 +1,6 @@
 import pytest
 
-from colormotion.nn.model.optical_flow import model
+from colormotion.nn.model.filters_optical_flow import model
 
 
 @pytest.mark.skip(reason='WIP')
