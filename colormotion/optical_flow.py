@@ -11,7 +11,7 @@ def _adjust_range(image):
     return image * 255
 
 
-def optical_flow(previous, current, destination=None):
+def numerical_optical_flow(previous, current, destination=None):
     # TODO OPTFLOW_USE_INITIAL_FLOW could enhance the results
     # This method is slow and single threaded. It should be run in parallel on multiple frames to speed it up.
     return cv2.calcOpticalFlowFarneback(_adjust_range(previous), _adjust_range(current),
@@ -32,5 +32,5 @@ def warp(features, flow, destination=None):
     if np.issubdtype(features.dtype, np.integer):
         # Don't pass integer features, else the output will be rounded to the nearest int
         features = features.astype(np.float32)
-    # TODO test with border modes other than cv2.BORDER_REPLICATE
+    # TODO Test with border modes other than cv2.BORDER_REPLICATE
     return cv2.remap(features, flow, None, cv2.INTER_LINEAR, destination, cv2.BORDER_REPLICATE)

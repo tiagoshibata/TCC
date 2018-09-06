@@ -4,7 +4,7 @@ import argparse
 import cv2
 import numpy as np
 
-from colormotion.optical_flow import optical_flow, warp
+from colormotion.optical_flow import numerical_optical_flow, warp
 
 
 def parse_args():
@@ -25,7 +25,7 @@ def apply_optical_flow(capture):
     frame = get_frame()
     while frame is not None:
         current = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        optical_flow(previous, current, destination=flow)
+        numerical_optical_flow(previous, current, destination=flow)
         warp(previous, flow, destination=previous)
         cv2.imshow('Warped', previous)
         cv2.waitKey(1)
