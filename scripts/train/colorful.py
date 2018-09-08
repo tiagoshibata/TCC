@@ -7,7 +7,7 @@ import sys
 from keras.callbacks import ModelCheckpoint
 
 from colormotion.argparse import directory_path
-from colormotion.nn.generators import VideoFramesDataGenerator
+from colormotion.nn.generators import VideoFramesWithLabStateGenerator
 from colormotion.nn.layers import load_weights
 from colormotion.nn.model.recurrent_to_input import model
 
@@ -26,8 +26,8 @@ def data_generators(dataset_folder):
         'seed': random.randrange(sys.maxsize),
     }
     # TODO Split train and test datasets
-    train = VideoFramesDataGenerator().flow_from_directory(dataset_folder, **flow_params)
-    test = VideoFramesDataGenerator().flow_from_directory(dataset_folder, **flow_params)
+    train = VideoFramesWithLabStateGenerator().flow_from_directory(dataset_folder, **flow_params)
+    test = VideoFramesWithLabStateGenerator().flow_from_directory(dataset_folder, **flow_params)
     return train, test
 
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from keras.callbacks import ModelCheckpoint
 
 from colormotion.argparse import directory_path
-from colormotion.nn.generators import VideoFramesDataGenerator
+from colormotion.nn.generators import VideoFramesWithLabStateGenerator
 from colormotion.nn.layers import load_weights
 from colormotion.nn.model.simple import model
 
@@ -23,8 +23,8 @@ def data_generators(dataset_folder):
         'target_size': (256, 256),
     }
     # TODO Split train and test datasets
-    train = VideoFramesDataGenerator(contiguous_count=0).flow_from_directory(dataset_folder, **flow_params)
-    test = VideoFramesDataGenerator(contiguous_count=0).flow_from_directory(dataset_folder, **flow_params)
+    train = VideoFramesWithLabStateGenerator(contiguous_count=0).flow_from_directory(dataset_folder, **flow_params)
+    test = VideoFramesWithLabStateGenerator(contiguous_count=0).flow_from_directory(dataset_folder, **flow_params)
     return train, test
 
 
