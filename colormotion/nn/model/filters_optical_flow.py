@@ -43,14 +43,11 @@ def warp_features_placeholder(l_input_tm1, l_input, features_tm1):
     return K.placeholder(shape=features_shape)
 
 
-def model():  # pylint: disable=too-many-statements,too-many-locals
-    l_input = Input(shape=(256, 256, 1), name='grayscale_input')
-    l_input_tm1 = Input(shape=(256, 256, 1), name='grayscale_input_tm1')
+def Downscale():  # pylint: disable=invalid-name
+    return AveragePooling2D(pool_size=1, strides=2)
 
 
-    def Downscale():  # pylint: disable=invalid-name
-        return AveragePooling2D(pool_size=1, strides=2)
-
+def encoder(l_input):
     # conv1
     # conv1_1
     x = Conv2D_default(64, name='conv1_1')(l_input)
@@ -102,22 +99,10 @@ def model():  # pylint: disable=too-many-statements,too-many-locals
     x = Conv2D_default(512, dilation_rate=2, name='conv6_2')(x)
     # conv6_3
     x = Conv2D_default(512, dilation_rate=2, name='conv6_3')(x)
-    features = BatchNormalization(name='conv6_3norm')(x)
-    features_shape = K.int_shape(features)[1:]
-    print('Encoded features have shape {}'.format(features_shape))
-    features_tm1 = Input(shape=features_shape, name='features_tm1')
+    return (BatchNormalization(name='conv6_3norm')(x), conv1_2norm, conv2_2norm, conv3_3_norm)
 
-    warped_features = numpy_layer(warp_features, warp_features_placeholder)([l_input_tm1, l_input, features_tm1])
-    assert K.int_shape(features) == K.int_shape(warped_features)
-    difference = Subtract()([features, warped_features])
-    # Composition mask
-    mask = mask_network(difference)
-    # Interpolate warped features and encoded features
-    warped_features = Multiply()([warped_features, mask])
-    ones_minus_mask = Subtract()([Lambda(K.ones_like)(mask), mask])
-    features = Multiply()([features, ones_minus_mask])
-    features = Add()([warped_features, features])
 
+def decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm):
     # Shortcuts, transpose convolutions and some convolutions use a custom initializer
     custom_initializer = {
         'kernel_initializer': RandomNormal(stddev=.01),
@@ -126,7 +111,7 @@ def model():  # pylint: disable=too-many-statements,too-many-locals
 
     # conv7
     # conv7_1
-    x = Conv2DTranspose(256, 4, padding='same', strides=2, name='conv7_1')(x)
+    x = Conv2DTranspose(256, 4, padding='same', strides=2, name='conv7_1')(features)
     # Shortcut
     shortcut = Conv2D(256, 3, padding='same', **custom_initializer, name='conv3_3_short')(conv3_3_norm)
     x = Add()([x, shortcut])
@@ -160,9 +145,37 @@ def model():  # pylint: disable=too-many-statements,too-many-locals
     x = LeakyReLU(alpha=.2)(x)
     # conv9_ab
     x = Conv2D(2, 1, activation='tanh', name='conv9_ab')(x)
-    x = Scale(100)(x)  # FIXME Scale uses a Lambda layer, preprocessing the output during training is probably faster
+    return Scale(100)(x)  # FIXME Scale uses a Lambda layer, preprocessing the output during training is probably faster
+
+
+def model():
+    l_input = Input(shape=(256, 256, 1), name='grayscale_input')
+    features, conv1_2norm, conv2_2norm, conv3_3_norm = encoder(l_input)
+    features_shape = K.int_shape(features)[1:]
+    print('Encoded features have shape {}'.format(features_shape))
+
+    features_tm1 = Input(shape=features_shape, name='features_tm1')
+    l_input_tm1 = Input(shape=(256, 256, 1), name='grayscale_input_tm1')
+    warped_features = numpy_layer(warp_features, warp_features_placeholder)([l_input_tm1, l_input, features_tm1])
+    assert K.int_shape(features) == K.int_shape(warped_features)
+    difference = Subtract()([features, warped_features])
+    # Composition mask
+    mask = mask_network(difference)
+    # Interpolate warped features and encoded features
+    warped_features = Multiply()([warped_features, mask])
+    ones_minus_mask = Subtract()([Lambda(K.ones_like)(mask), mask])
+    features = Multiply()([features, ones_minus_mask])
+    features = Add()([warped_features, features])
+    x = decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm)
 
     m = Model(inputs=[l_input, l_input_tm1, features_tm1], outputs=[x, features])
     m.compile(loss=lambda y_true, y_pred: mean_squared_error(y_true, y_pred[0]),
               optimizer='adam')
+    return m
+
+
+def model_encoder():
+    l_input = Input(shape=(256, 256, 1), name='grayscale_input')
+    encoded = encoder(l_input)[0]
+    m = Model(inputs=[l_input], outputs=encoded)
     return m
