@@ -21,6 +21,16 @@ def Crop(axis, start, end, **kwargs):  # pylint: disable=invalid-name
 def Scale(amount, **kwargs):  # pylint: disable=invalid-name
     return Lambda(lambda x: x * amount, **kwargs)
 
+
+def numpy_layer(f, compute_shape):
+    '''Convert numpy function to a Lambda layer.
+
+    f: target function. Will receive numpy arrays and must return a numpy array.
+    compute_shape: function that receives placeholder Tensors and returns a placeholder Tensor of f's output.
+    '''
+    return Lambda(lambda args: compute_shape(*args) if K.is_placeholder(args[0])
+                  else K.variable(f(*(K.eval(x) for x in args))))
+
 if K.backend() == 'tensorflow':
     import tensorflow as tf
     depthwise_conv_2d = tf.keras.layers.DepthwiseConv2D  # pylint: disable=invalid-name

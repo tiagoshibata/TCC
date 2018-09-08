@@ -25,7 +25,15 @@ def warp(features, flow, destination=None):
     '''
     # Based on: https://stackoverflow.com/questions/17459584/opencv-warping-image-based-on-calcopticalflowfarneback
     # and https://github.com/opencv/opencv/issues/11068
-    h, w = flow.shape[:2]
+    h, w = features.shape[:2]
+    flow_h, flow_w = flow.shape[:2]
+    if (h, w) != (flow_h, flow_w):
+        # Preprocess flow if resolutions don't match
+        # TODO Downscaling the grayscale images before computing the optical flow would be much faster,
+        # but could lose some accuracy. We should experiment with it.
+        ratio = h / flow_h
+        assert ratio == w / flow_w
+        flow = ratio * cv2.resize(flow, (w, h))
     flow = -flow
     flow[:, :, 0] += np.arange(w)
     flow[:, :, 1] += np.arange(h)[:, np.newaxis]

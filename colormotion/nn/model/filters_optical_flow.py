@@ -7,6 +7,7 @@ from keras.layers import Add, AveragePooling2D, BatchNormalization, Conv2D, Inpu
 from keras.models import Model
 
 from colormotion.optical_flow import numerical_optical_flow, warp
+from colormotion.nn.layers import numpy_layer
 
 
 def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
@@ -14,11 +15,8 @@ def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
     return Conv2D(filters, 3, padding='same', activation='relu', **kwargs)
 
 
-def to_layer(f):
-    return Lambda(lambda args: f(*(K.eval(x) for x in args)))
-
-
 def mask_network(difference):
+    # TODO Scale so that range is approx. 0-1
     x = Conv2D_default(16, name='mask_conv1')(difference)
     x = Conv2D_default(32, name='mask_conv2')(x)
     return Conv2D_default(1, name='mask_conv3')(x)
@@ -27,15 +25,23 @@ def mask_network(difference):
 def warp_features(l_input_tm1, l_input, features_tm1):
     # TODO Replace with a optical flow network and optimize globally with the rest of the model
     # TODO Reuse destination for performance
-    print(l_input_tm1, l_input, features_tm1)
     flow = numerical_optical_flow(l_input_tm1, l_input)
     return warp(features_tm1, flow)
+
+
+def warp_features_placeholder(l_input_tm1, l_input, features_tm1):
+    input_shape = K.int_shape(l_input)
+    assert K.int_shape(l_input_tm1) == input_shape
+    assert len(input_shape) == 4 and input_shape[0] is None
+
+    features_shape = K.int_shape(features_tm1)
+    assert len(features_shape) == 4 and features_shape[0] is None
+    return K.placeholder(shape=features_shape)
 
 
 def model():  # pylint: disable=too-many-statements,too-many-locals
     l_input = Input(shape=(256, 256, 1), name='grayscale_input')
     l_input_tm1 = Input(shape=(256, 256, 1), name='grayscale_input_tm1')
-    features_tm1 = Input(shape=(256, 256, 1), name='features_tm1')
 
 
     def Downscale():  # pylint: disable=invalid-name
@@ -93,20 +99,23 @@ def model():  # pylint: disable=too-many-statements,too-many-locals
     # conv6_3
     x = Conv2D_default(512, dilation_rate=2, name='conv6_3')(x)
     features = BatchNormalization(name='conv6_3norm')(x)
+    features_shape = K.int_shape(features)[1:]
+    print('Encoded features have shape {}'.format(features_shape))
+    features_tm1 = Input(shape=features_shape, name='features_tm1')
 
-    warped_features = to_layer(warp_features)([l_input_tm1, l_input, features_tm1])
+    warped_features = numpy_layer(warp_features, warp_features_placeholder)([l_input_tm1, l_input, features_tm1])
     assert K.int_shape(features) == K.int_shape(warped_features)
     difference = Subtract()([features, warped_features])
     # Composition mask
     mask = mask_network(difference)
     # Interpolate warped features and encoded features
     warped_features = Multiply()([warped_features, mask])
-    ones_minus_mask = Subtract()([K.ones(K.shape(mask)), mask])
+    ones_minus_mask = Subtract()([Lambda(K.ones_like)(mask), mask])
     features = Multiply()([features, ones_minus_mask])
     features = Add()([warped_features, features])
 
-    assert K.int_shape(x) == K.int_shape(features)
     # TODO Decoder
+    # x = ...
 
     m = Model(inputs=[l_input, l_input_tm1, features_tm1], outputs=[x, features])
     # TODO Another loss function might be more appropriate
