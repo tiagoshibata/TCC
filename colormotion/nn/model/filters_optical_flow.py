@@ -3,11 +3,14 @@
 Some concepts are taken from https://arxiv.org/abs/1703.09211.
 '''
 import keras.backend as K
-from keras.layers import Add, AveragePooling2D, BatchNormalization, Conv2D, Input, Lambda, Multiply, Subtract
+from keras.initializers import RandomNormal
+from keras.layers import (Activation, Add, AveragePooling2D, BatchNormalization, Conv2D, Conv2DTranspose, Input, Lambda,
+                           Multiply, Subtract)
+from keras.layers.advanced_activations import LeakyReLU
 from keras.models import Model
 
 from colormotion.optical_flow import numerical_optical_flow, warp
-from colormotion.nn.layers import numpy_layer
+from colormotion.nn.layers import numpy_layer, Scale
 
 
 def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
@@ -52,15 +55,15 @@ def model():  # pylint: disable=too-many-statements,too-many-locals
     x = Conv2D_default(64, name='conv1_1')(l_input)
     # conv1_2
     x = Conv2D_default(64, name='conv1_2')(x)
-    # conv1_2norm = BatchNormalization(name='conv1_2norm')(x)
-    x = Downscale()(x)
+    conv1_2norm = BatchNormalization(name='conv1_2norm')(x)
+    x = Downscale()(x)  # TODO Test downscaling the normalized values
 
     # conv2
     # conv2_1
     x = Conv2D_default(128, name='conv2_1')(x)
     # conv2_2
     x = Conv2D_default(128, name='conv2_2')(x)
-    # conv2_2norm = BatchNormalization(name='conv2_2norm')(x)
+    conv2_2norm = BatchNormalization(name='conv2_2norm')(x)
     x = Downscale()(x)
 
     # conv3
@@ -70,7 +73,7 @@ def model():  # pylint: disable=too-many-statements,too-many-locals
     x = Conv2D_default(256, name='conv3_2')(x)
     # conv3_3
     x = Conv2D_default(256, name='conv3_3')(x)
-    # conv3_3_norm = BatchNormalization(name='conv3_3norm')(x)
+    conv3_3_norm = BatchNormalization(name='conv3_3norm')(x)
     x = Downscale()(x)
 
     # conv4
@@ -114,8 +117,49 @@ def model():  # pylint: disable=too-many-statements,too-many-locals
     features = Multiply()([features, ones_minus_mask])
     features = Add()([warped_features, features])
 
-    # TODO Decoder
-    # x = ...
+    # Shortcuts, transpose convolutions and some convolutions use a custom initializer
+    custom_initializer = {
+        'kernel_initializer': RandomNormal(stddev=.01),
+        'bias_initializer': 'ones',
+    }
+
+    # conv7
+    # conv7_1
+    x = Conv2DTranspose(256, 4, padding='same', strides=2, name='conv7_1')(x)
+    # Shortcut
+    shortcut = Conv2D(256, 3, padding='same', **custom_initializer, name='conv3_3_short')(conv3_3_norm)
+    x = Add()([x, shortcut])
+    x = Activation('relu')(x)
+    # conv7_2
+    x = Conv2D_default(256, name='conv7_2')(x)
+    # conv7_3
+    x = Conv2D_default(256, name='conv7_3')(x)
+    x = BatchNormalization(name='conv7_3norm')(x)
+
+    # conv8
+    # conv8_1
+    x = Conv2DTranspose(128, 4, padding='same', strides=2, **custom_initializer, name='conv8_1')(x)
+    # Shortcut
+    shortcut = Conv2D(128, 3, padding='same', **custom_initializer, name='conv2_2_short')(conv2_2norm)
+    x = Add()([x, shortcut])
+    x = Activation('relu')(x)
+    # conv8_2
+    x = Conv2D_default(128, **custom_initializer, name='conv8_2')(x)
+    x = BatchNormalization(name='conv8_2norm')(x)
+
+    # conv9
+    # conv9_1
+    x = Conv2DTranspose(128, 4, padding='same', strides=2, **custom_initializer, name='conv9_1')(x)
+    # Shortcut
+    shortcut = Conv2D(128, 3, padding='same', **custom_initializer, name='conv1_2_short')(conv1_2norm)
+    x = Add()([x, shortcut])
+    x = Activation('relu')(x)
+    # conv9_2
+    x = Conv2D(128, 3, padding='same', **custom_initializer, name='conv9_2')(x)
+    x = LeakyReLU(alpha=.2)(x)
+    # conv9_ab
+    x = Conv2D(2, 1, activation='tanh', name='conv9_ab')(x)
+    x = Scale(100)(x)  # FIXME Scale uses a Lambda layer, preprocessing the output during training is probably faster
 
     m = Model(inputs=[l_input, l_input_tm1, features_tm1], outputs=[x, features])
     # TODO Another loss function might be more appropriate
