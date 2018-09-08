@@ -5,7 +5,7 @@ Some concepts are taken from https://arxiv.org/abs/1703.09211.
 import keras.backend as K
 from keras.initializers import RandomNormal
 from keras.layers import (Activation, Add, AveragePooling2D, BatchNormalization, Conv2D, Conv2DTranspose, Input, Lambda,
-                           Multiply, Subtract)
+                          Multiply, Subtract)
 from keras.layers.advanced_activations import LeakyReLU
 from keras.losses import mean_squared_error
 from keras.models import Model

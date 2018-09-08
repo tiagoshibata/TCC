@@ -27,7 +27,7 @@ class VideoFramesGenerator():
         random = Random(seed)
         while True:
             yield self.load_batch(random.choices(contiguous_frames, k=batch_size),
-                                   target_size=target_size)
+                                  target_size=target_size)
 
     def load_batch(self, start_frames, target_size):
         samples = [self.load_sample(scene, frame, target_size) for scene, frame in start_frames]
