@@ -7,6 +7,7 @@ from keras.initializers import RandomNormal
 from keras.layers import (Activation, Add, AveragePooling2D, BatchNormalization, Conv2D, Conv2DTranspose, Input, Lambda,
                            Multiply, Subtract)
 from keras.layers.advanced_activations import LeakyReLU
+from keras.losses import mean_squared_error
 from keras.models import Model
 
 from colormotion.optical_flow import numerical_optical_flow, warp
@@ -162,7 +163,6 @@ def model():  # pylint: disable=too-many-statements,too-many-locals
     x = Scale(100)(x)  # FIXME Scale uses a Lambda layer, preprocessing the output during training is probably faster
 
     m = Model(inputs=[l_input, l_input_tm1, features_tm1], outputs=[x, features])
-    # TODO Another loss function might be more appropriate
-    m.compile(loss='mean_squared_error',
+    m.compile(loss=lambda y_true, y_pred: mean_squared_error(y_true, y_pred[0]),
               optimizer='adam')
     return m

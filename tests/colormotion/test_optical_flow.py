@@ -24,7 +24,7 @@ def test_warp_nonmatching_resolutions():
     warped = warp(features, flow)
     scaled_before_warp = cv2.resize(warp(cv2.resize(features, (128, 128)), flow), (32, 32))
     relative_error = np.abs((warped - scaled_before_warp) / warped)
-    assert np.mean(relative_error) < .06
+    assert np.mean(relative_error) < .08
 
 
 def test_optical_flow_normalized():
