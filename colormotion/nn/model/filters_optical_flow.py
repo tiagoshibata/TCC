@@ -151,28 +151,33 @@ def decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm):
     return Scale(100)(x)  # FIXME Scale uses a Lambda layer, preprocessing the output during training is probably faster
 
 
+def interpolate(previous, new, mask):
+    previous = Multiply()([previous, mask])
+    ones_minus_mask = Subtract()([Lambda(K.ones_like)(mask), mask])
+    new = Multiply()([new, ones_minus_mask])
+    return Add()([previous, new])
+
+
 def model():
     l_input = Input(shape=(256, 256, 1), name='grayscale_input')
     ab_and_mask_input = Input(shape=(256, 256, 3), name='ab_and_mask_input')
-    features, conv1_2norm, conv2_2norm, conv3_3_norm = encoder(l_input, ab_and_mask_input)
-    features_shape = K.int_shape(features)[1:]
+    encoded_features, conv1_2norm, conv2_2norm, conv3_3_norm = encoder(l_input, ab_and_mask_input)
+    features_shape = K.int_shape(encoded_features)[1:]
     print('Encoded features have shape {}'.format(features_shape))
 
     features_tm1 = Input(shape=features_shape, name='features_tm1')
     l_input_tm1 = Input(shape=(256, 256, 1), name='grayscale_input_tm1')
     warped_features = numpy_layer(warp_features, warp_features_placeholder)([l_input_tm1, l_input, features_tm1])
-    assert K.int_shape(features) == K.int_shape(warped_features)
-    difference = Subtract()([features, warped_features])
+    assert K.int_shape(encoded_features) == K.int_shape(warped_features)
+    difference = Subtract()([encoded_features, warped_features])
     # Composition mask
     mask = mask_network(difference)
     # Interpolate warped features and encoded features
-    warped_features = Multiply()([warped_features, mask])
-    ones_minus_mask = Subtract()([Lambda(K.ones_like)(mask), mask])
-    features = Multiply()([features, ones_minus_mask])
-    features = Add()([warped_features, features])
-    x = decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm)
+    interpolated_features = interpolate(warped_features, encoded_features, mask)
+    x = decoder(interpolated_features, conv1_2norm, conv2_2norm, conv3_3_norm)
 
-    m = Model(inputs=[l_input, l_input_tm1, features_tm1, ab_and_mask_input], outputs=[x, features])
+    m = Model(inputs=[l_input, l_input_tm1, features_tm1, ab_and_mask_input],
+              outputs=[x, encoded_features, interpolated_features])
     m.compile(loss=lambda y_true, y_pred: mean_squared_error(y_true, y_pred[0]),
               optimizer='adam')
     return m

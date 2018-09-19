@@ -18,7 +18,7 @@ class VideoFramesGenerator():
         self.contiguous_count = contiguous_count
 
     def flow_from_directory(self, root, batch_size=32, target_size=None, seed=None):
-        contiguous_frames = self._get_contiguous_frames(dataset.get_all_scenes(root))
+        contiguous_frames = self.get_contiguous_frames(dataset.get_all_scenes(root))
         random = Random(seed)
         while True:
             yield self.load_batch(random.choices(contiguous_frames, k=batch_size),
