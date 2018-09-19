@@ -9,7 +9,7 @@ from keras.callbacks import ModelCheckpoint
 from colormotion.argparse import directory_path
 from colormotion.nn.generators import VideoFramesWithLabStateGenerator
 from colormotion.nn.layers import load_weights
-from colormotion.nn.model.filters_optical_flow import model, model_encoder
+from colormotion.nn.model.filters_optical_flow import model
 
 
 def parse_args():

@@ -47,10 +47,13 @@ def Downscale():  # pylint: disable=invalid-name
     return AveragePooling2D(pool_size=1, strides=2)
 
 
-def encoder(l_input):
+def encoder(l_input, ab_and_mask_input):
     # conv1
     # conv1_1
-    x = Conv2D_default(64, name='conv1_1')(l_input)
+    ab_and_mask = Conv2D(64, 3, padding='same', name='ab_conv1_1')(ab_and_mask_input)
+    x = Conv2D(64, 3, padding='same', name='bw_conv1_1')(l_input)
+    x = Add()([ab_and_mask, x])
+    x = Activation('relu')(x)
     # conv1_2
     x = Conv2D_default(64, name='conv1_2')(x)
     conv1_2norm = BatchNormalization(name='conv1_2norm')(x)
@@ -150,7 +153,8 @@ def decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm):
 
 def model():
     l_input = Input(shape=(256, 256, 1), name='grayscale_input')
-    features, conv1_2norm, conv2_2norm, conv3_3_norm = encoder(l_input)
+    ab_and_mask_input = Input(shape=(256, 256, 3), name='ab_and_mask_input')
+    features, conv1_2norm, conv2_2norm, conv3_3_norm = encoder(l_input, ab_and_mask_input)
     features_shape = K.int_shape(features)[1:]
     print('Encoded features have shape {}'.format(features_shape))
 
@@ -168,14 +172,7 @@ def model():
     features = Add()([warped_features, features])
     x = decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm)
 
-    m = Model(inputs=[l_input, l_input_tm1, features_tm1], outputs=[x, features])
+    m = Model(inputs=[l_input, l_input_tm1, features_tm1, ab_and_mask_input], outputs=[x, features])
     m.compile(loss=lambda y_true, y_pred: mean_squared_error(y_true, y_pred[0]),
               optimizer='adam')
-    return m
-
-
-def model_encoder():
-    l_input = Input(shape=(256, 256, 1), name='grayscale_input')
-    encoded = encoder(l_input)[0]
-    m = Model(inputs=[l_input], outputs=encoded)
     return m
