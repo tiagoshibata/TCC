@@ -59,6 +59,9 @@ def bgr_to_lab(image):
     l -= 50  # mean centering
     return l, ab
 
+def read_frame_lab(scene, frame_number, target_size):
+    bgr_image = read_image(get_frame_path(scene, frame_number), resolution=target_size)
+    return bgr_to_lab(bgr_image)
 
 def _lab_to_bgr(l, ab):
     # Undo mean centering in L channel

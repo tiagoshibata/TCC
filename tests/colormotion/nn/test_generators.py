@@ -63,16 +63,16 @@ def test_l_load_batch(mock_load_sample):
     assert (y_batch == np.array(y)).all()
 
 
-@patch('colormotion.nn.generators.read_image_lab')
-def test_l_load_sample(mock_read_image_lab):
+@patch('colormotion.dataset.read_frame_lab')
+def test_l_load_sample(mock_read_frame_lab):
     l = [np.random.random((32, 32, 3)) for _ in range(4)]
     ab = [np.random.random((32, 32, 3)) for _ in range(4)]
-    mock_read_image_lab.side_effect = lambda _, frame, __: (l[frame], ab[frame])
+    mock_read_frame_lab.side_effect = lambda _, frame, __: (l[frame], ab[frame])
 
     generator = generators.VideoFramesWithLStateGenerator()
     x_batch, y_batch = generator.load_batch([('scene', 0), ('scene', 1), ('other_scene', 2)], (32, 32))
 
-    mock_read_image_lab.assert_has_calls([
+    mock_read_frame_lab.assert_has_calls([
         call('scene', 1, (32, 32)),
         call('scene', 0, (32, 32)),
         call('scene', 2, (32, 32)),

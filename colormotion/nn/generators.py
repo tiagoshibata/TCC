@@ -5,11 +5,6 @@ import numpy as np
 from colormotion import dataset
 
 
-def read_image_lab(scene, frame_number, target_size):
-    bgr_image = dataset.read_image(dataset.get_frame_path(scene, frame_number), resolution=target_size)
-    return dataset.bgr_to_lab(bgr_image)
-
-
 class VideoFramesGenerator():
     def __init__(self, data_format='channels_last', contiguous_count=1):
         '''Generate groups of contiguous frames from a dataset.
@@ -57,9 +52,9 @@ class VideoFramesWithLabStateGenerator(VideoFramesGenerator):  # pylint: disable
         '''Load a sample to build a batch.'''
         # y = expected colorization in last frame
         # state = previous frames colorized and current frame in grayscale
-        grayscale, y = read_image_lab(scene, start_frame + self.contiguous_count, target_size)
+        grayscale, y = dataset.read_frame_lab(scene, start_frame + self.contiguous_count, target_size)
         state = [
-            np.dstack(read_image_lab(scene, start_frame + i, target_size))
+            np.dstack(dataset.read_frame_lab(scene, start_frame + i, target_size))
             for i in range(self.contiguous_count)
         ]
         return state + [grayscale, y]
@@ -71,9 +66,9 @@ class VideoFramesWithLStateGenerator(VideoFramesGenerator):  # pylint: disable=t
         '''Load a sample to build a batch.'''
         # y = expected colorization in last frame
         # state = previous frames colorized and current frame in grayscale
-        grayscale, y = read_image_lab(scene, start_frame + self.contiguous_count, target_size)
+        grayscale, y = dataset.read_frame_lab(scene, start_frame + self.contiguous_count, target_size)
         state = [
-            read_image_lab(scene, start_frame + i, target_size)[0]
+            dataset.read_frame_lab(scene, start_frame + i, target_size)[0]
             for i in range(self.contiguous_count)
         ]
         return state + [grayscale, y]
