@@ -36,22 +36,22 @@ class Generator(VideoFramesGenerator):
         assert self.contiguous_count == 1
         x_batch = [[], [], [], []]
         y_batch = []
+        features_tm1_zeros = np.empty((32, 32, 512))
+        ab_and_mask_input_zeros = np.zeros((256, 256, 3))
         for scene, frame in start_frames:
-            # y = expected colorization in last frame
-            # state = previous frames colorized and current frame in grayscale
             l, ab = dataset.read_frame_lab(scene, frame + self.contiguous_count, target_size)
             x_batch[0].append(l)
             y_batch.append(ab)
-            l_tm1, ab_tm1 = dataset.read_frame_lab(scene, frame, target_size)
+            l_tm1, _ = dataset.read_frame_lab(scene, frame, target_size)
             x_batch[1].append(l_tm1)
-            features_tm1_placeholder = np.empty((32, 32, 512))
-            ab_and_mask_input_placeholder = np.zeros((256, 256, 3))
             _, features_tm1, _ = self.model.predict(l_tm1, l_tm1,
                                                     features_tm1_placeholder, ab_and_mask_input_placeholder)
             x_batch[2].append(features_tm1)
             # TODO create ab_and_mask_input using ab_tm1 instead of returning a placeholder
-            x_batch[3].append(ab_and_mask_input_placeholder)
-        return [np.array(model_input) for model_input in x_batch], np.array(y_batch)
+            x_batch[3].append(ab_and_mask_input_zeros)
+        zeros_feature_batch = np.array([features_tm1_zeros] * len(y_batch))
+        return ([np.array(model_input) for model_input in x_batch],
+                [np.array(y_batch), zeros_feature_batch, zeros_feature_batch])
 
     def load_sample(self, scene, start_frame, target_size):
         pass  # unused

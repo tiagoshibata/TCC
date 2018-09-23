@@ -1,4 +1,5 @@
 import keras.backend as K
+from keras.engine.topology import Layer
 from keras.layers import Lambda
 
 
@@ -22,14 +23,17 @@ def Scale(amount, **kwargs):  # pylint: disable=invalid-name
     return Lambda(lambda x: x * amount, **kwargs)
 
 
-def numpy_layer(f, compute_shape):
-    '''Convert numpy function to a Lambda layer.
+class NumpyLayer(Layer):
+    def __init__(self, f, compute_shape, **kwargs):
+        super().__init__(**kwargs)
+        self.f = f
+        self.compute_shape = compute_shape
 
-    f: target function. Will receive numpy arrays and must return a numpy array.
-    compute_shape: function that receives placeholder Tensors and returns a placeholder Tensor of f's output.
-    '''
-    return Lambda(lambda args: compute_shape(*args) if K.is_placeholder(args[0])
-                  else K.variable(f(*(K.eval(x) for x in args))))
+    def call(self, inputs, **kwargs):
+        return K.variable(self.f(*(K.eval(x) for x in inputs)))
+
+    def compute_output_shape(self, input_shapes):
+        return self.compute_shape(*input_shapes)
 
 if K.backend() == 'tensorflow':
     import tensorflow as tf

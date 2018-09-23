@@ -11,7 +11,7 @@ from keras.losses import mean_squared_error
 from keras.models import Model
 
 from colormotion.optical_flow import numerical_optical_flow, warp
-from colormotion.nn.layers import numpy_layer, Scale
+from colormotion.nn.layers import NumpyLayer, Scale
 
 
 def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
@@ -33,14 +33,8 @@ def warp_features(l_input_tm1, l_input, features_tm1):
     return warp(features_tm1, flow)
 
 
-def warp_features_placeholder(l_input_tm1, l_input, features_tm1):
-    input_shape = K.int_shape(l_input)
-    assert K.int_shape(l_input_tm1) == input_shape
-    assert len(input_shape) == 4 and input_shape[0] is None
-
-    features_shape = K.int_shape(features_tm1)
-    assert len(features_shape) == 4 and features_shape[0] is None
-    return K.placeholder(shape=features_shape)
+def warp_features_compute_shape(input_tm1_shape, input_shape, features_tm1_shape):
+    return features_tm1_shape
 
 
 def Downscale():  # pylint: disable=invalid-name
@@ -152,10 +146,10 @@ def decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm):
 
 
 def interpolate(previous, new, mask):
-    previous = Multiply()([previous, mask])
-    ones_minus_mask = Subtract()([Lambda(K.ones_like)(mask), mask])
-    new = Multiply()([new, ones_minus_mask])
-    return Add()([previous, new])
+    previous = Multiply(name='interpolate_mul_previous')([previous, mask])
+    ones_minus_mask = Subtract(name='interpolate_one_minus_mask')([Lambda(K.ones_like)(mask), mask])
+    new = Multiply(name='interpolate_mul_new')([new, ones_minus_mask])
+    return Add(name='interpolate_add')([previous, new])
 
 
 def model():
@@ -167,7 +161,8 @@ def model():
 
     features_tm1 = Input(shape=features_shape, name='features_tm1')
     l_input_tm1 = Input(shape=(256, 256, 1), name='grayscale_input_tm1')
-    warped_features = numpy_layer(warp_features, warp_features_placeholder)([l_input_tm1, l_input, features_tm1])
+    warped_features = NumpyLayer(warp_features, warp_features_compute_shape,
+                                 name='warp_features')([l_input_tm1, l_input, features_tm1])
     assert K.int_shape(encoded_features) == K.int_shape(warped_features)
     difference = Subtract()([encoded_features, warped_features])
     # Composition mask
