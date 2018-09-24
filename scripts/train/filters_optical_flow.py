@@ -44,8 +44,9 @@ class Generator(VideoFramesGenerator):
             y_batch.append(ab)
             l_tm1, _ = dataset.read_frame_lab(scene, frame, target_size)
             x_batch[1].append(l_tm1)
-            _, features_tm1, _ = self.model.predict(l_tm1, l_tm1,
-                                                    features_tm1_placeholder, ab_and_mask_input_placeholder)
+            features_tm1 = features_tm1_zeros
+            # _, features_tm1, _ = self.model.predict(
+            #     [np.array([x]) for x in (l_tm1, l_tm1, features_tm1_zeros, ab_and_mask_input_zeros)])
             x_batch[2].append(features_tm1)
             # TODO create ab_and_mask_input using ab_tm1 instead of returning a placeholder
             x_batch[3].append(ab_and_mask_input_zeros)
