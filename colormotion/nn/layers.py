@@ -32,7 +32,7 @@ class NumpyLayer(Layer):
     def call(self, inputs, **kwargs):
         return K.variable(self.f(*(K.eval(x) for x in inputs)))
 
-    def compute_output_shape(self, input_shapes):
+    def compute_output_shape(self, input_shapes):  # pylint: disable=arguments-differ
         return self.compute_shape(*input_shapes)
 
 if K.backend() == 'tensorflow':
