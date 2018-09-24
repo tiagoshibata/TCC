@@ -36,8 +36,8 @@ class Generator(VideoFramesGenerator):
         y_batch = []
         for scene, frame in start_frames:
             l, ab = dataset.read_frame_lab(scene, frame + self.contiguous_count, target_size)
-            x_batch[0].append(l)
-            x_batch[1].append(ab_and_mask_matrix(ab, .05))
+            x_batch[0].append(ab_and_mask_matrix(ab, .05))
+            x_batch[1].append(l)
             y_batch.append(ab)
         return [np.array(model_input) for model_input in x_batch], np.array(y_batch)
 
