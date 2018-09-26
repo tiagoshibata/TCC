@@ -18,9 +18,9 @@ from colormotion.user_guided import ab_and_mask_matrix
 def parse_args():
     parser = argparse.ArgumentParser(description='Run training.')
     parser.add_argument('--weights', type=Path, help='weights file')
-    parser.add_argument('--steps-per-epoch', default=2000)
-    parser.add_argument('--epochs', default=80)
-    parser.add_argument('--validation-steps', default=20)
+    parser.add_argument('--steps-per-epoch', type=int, default=2000)
+    parser.add_argument('--epochs', type=int, default=80)
+    parser.add_argument('--validation-steps', type=int, default=20)
     parser.add_argument('--dry', action='store_true')
     parser.add_argument('dataset', type=directory_path, help='dataset folder')
     return parser.parse_args()
@@ -36,7 +36,7 @@ class Generator(VideoFramesGenerator):
         y_batch = []
         for scene, frame in start_frames:
             l, ab = dataset.read_frame_lab(scene, frame + self.contiguous_count, target_size)
-            x_batch[0].append(ab_and_mask_matrix(ab, .05))
+            x_batch[0].append(ab_and_mask_matrix(ab, .00008))
             x_batch[1].append(l)
             y_batch.append(ab)
         return [np.array(model_input) for model_input in x_batch], np.array(y_batch)
