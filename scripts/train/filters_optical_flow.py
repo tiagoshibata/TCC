@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import argparse
-from pathlib import Path
 import random
 import sys
 
@@ -8,51 +6,47 @@ from keras.callbacks import ModelCheckpoint
 import numpy as np
 
 from colormotion import dataset
-from colormotion.argparse import directory_path
+from colormotion.argparse import training_args_parser
 from colormotion.nn.generators import VideoFramesGenerator
 from colormotion.nn.layers import load_weights
-from colormotion.nn.model.filters_optical_flow import model
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description='Run training.')
-    parser.add_argument('--weights', type=Path, help='weights file')
-    parser.add_argument('--steps-per-epoch', default=2000)
-    parser.add_argument('--epochs', default=80)
-    parser.add_argument('--validation-steps', default=20)
-    parser.add_argument('dataset', type=directory_path, help='dataset folder')
-    return parser.parse_args()
+from colormotion.nn.model.filters_optical_flow import interpolate_and_decode, warp_features
+from colormotion.nn.model.user_guided import encoder_model
+from colormotion.user_guided import ab_and_mask_matrix
 
 
 class Generator(VideoFramesGenerator):
     '''Generate groups of contiguous frames from a dataset.
 
-    The generated data has inputs [l_input, l_input_tm1, features_tm1, ab_and_mask_input].'''
-    def __init__(self, nn_model, **kwargs):
-        self.model = nn_model
+    The generated data has inputs [warped_features, features, conv1_2norm, conv2_2norm, conv3_3norm].'''
+    def __init__(self, encoder, **kwargs):
+        self.encoder = encoder
         super().__init__(**kwargs)
 
     def load_batch(self, start_frames, target_size):  # pylint: disable=too-many-locals
         assert self.contiguous_count == 1
-        x_batch = [[], [], [], []]
+        x_batch = [[], [], [], [], []]
         y_batch = []
-        features_tm1_zeros = np.empty((32, 32, 512))
-        ab_and_mask_input_zeros = np.zeros((256, 256, 3))
         for scene, frame in start_frames:
             l, ab = dataset.read_frame_lab(scene, frame + self.contiguous_count, target_size)
-            x_batch[0].append(l)
-            y_batch.append(ab)
             l_tm1, _ = dataset.read_frame_lab(scene, frame, target_size)
-            x_batch[1].append(l_tm1)
-            features_tm1 = features_tm1_zeros
-            # _, features_tm1, _ = self.model.predict(
-            #     [np.array([x]) for x in (l_tm1, l_tm1, features_tm1_zeros, ab_and_mask_input_zeros)])
-            x_batch[2].append(features_tm1)
-            # TODO create ab_and_mask_input using ab_tm1 instead of returning a placeholder
-            x_batch[3].append(ab_and_mask_input_zeros)
-        zeros_feature_batch = np.array([features_tm1_zeros] * len(y_batch))
-        return ([np.array(model_input) for model_input in x_batch],
-                [np.array(y_batch), zeros_feature_batch, zeros_feature_batch])
+
+            ab_and_mask_matrix_t = ab_and_mask_matrix(ab, .00008)
+            ab_and_mask_matrix_tm1 = ab_and_mask_matrix(ab, .00004)
+
+            from keras import backend as K  # FIXME
+            K.clear_session()  # FIXME
+            features_tm1, _, _, _ = self.encoder.predict([np.array([x]) for x in (l_tm1, ab_and_mask_matrix_tm1)])
+            features, conv1_2norm, conv2_2norm, conv3_3norm = self.encoder.predict(
+                [np.array([x]) for x in (ab_and_mask_matrix_t, l)])
+            warped_features = warp_features(l_tm1, l, features_tm1)
+
+            x_batch[0].append(warped_features)
+            x_batch[1].append(features)
+            x_batch[2].append(conv1_2norm)
+            x_batch[3].append(conv2_2norm)
+            x_batch[4].append(conv3_3norm)
+            y_batch.append(ab)
+        return [np.array(model_input) for model_input in x_batch], np.array(y_batch)
 
     def load_sample(self, scene, start_frame, target_size):
         pass  # unused
@@ -71,12 +65,14 @@ def data_generators(dataset_folder, nn_model):
 
 
 def main(args):
-    m = model()
-    train_generator, test_generator = data_generators(args.dataset, m)
-    if args.weights:
-        load_weights(m, args.weights)
-    checkpoint = ModelCheckpoint('epoch-{epoch:03d}-{val_loss:.3f}.hdf5', verbose=1, period=5)
-    fit = m.fit_generator(
+    assert args.weights, 'This training requires a pre-trained, frozen encoder'
+    encoder, decoder = encoder_model(), interpolate_and_decode()
+    load_weights(encoder, args.weights, by_name=True)
+    load_weights(decoder, args.weights, by_name=True)
+
+    train_generator, test_generator = data_generators(args.dataset, encoder)
+    checkpoint = ModelCheckpoint('epoch-{epoch:03d}-{val_loss:.3f}.h5', verbose=1, period=5)
+    fit = decoder.fit_generator(
         train_generator,
         steps_per_epoch=args.steps_per_epoch,
         epochs=args.epochs,
@@ -84,11 +80,11 @@ def main(args):
         validation_steps=args.validation_steps,
         callbacks=[checkpoint])
     print(fit.history)
-    m.save('optical_flow_model.h5')
+    decoder.save('optical_flow_decoder.h5')
     # score = m.evaluate(...)
     # print('Test loss:', score[0])
     # print('Test accuracy:', score[1])
 
 
 if __name__ == '__main__':
-    main(parse_args())
+    main(training_args_parser().parse_args())

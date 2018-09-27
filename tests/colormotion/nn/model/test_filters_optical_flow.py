@@ -1,8 +1,5 @@
-import pytest
-
-from colormotion.nn.model.filters_optical_flow import model
+from colormotion.nn.model.filters_optical_flow import interpolate_and_decode
 
 
-@pytest.mark.skip('WIP')
 def test_compiles():
-    model()
+    interpolate_and_decode()

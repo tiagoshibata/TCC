@@ -40,7 +40,7 @@ def model():  # pylint: disable=too-many-statements
     x = Conv2D_default(256, name='conv3_2')(x)
     # conv3_3
     x = Conv2D_default(256, name='conv3_3')(x)
-    conv3_3_norm = BatchNormalization(name='conv3_3norm')(x)
+    conv3_3norm = BatchNormalization(name='conv3_3norm')(x)
     x = Downscale()(x)
 
     # conv4
@@ -89,7 +89,7 @@ def model():  # pylint: disable=too-many-statements
     # conv8_1
     x = Conv2DTranspose(256, 4, padding='same', strides=2, name='conv8_1')(x)
     # Shortcut
-    shortcut = Conv2D(256, 3, padding='same', **custom_initializer, name='conv3_3_short')(conv3_3_norm)
+    shortcut = Conv2D(256, 3, padding='same', **custom_initializer, name='conv3_3_short')(conv3_3norm)
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
     # conv8_2

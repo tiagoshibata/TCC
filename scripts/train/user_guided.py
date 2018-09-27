@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import argparse
-from pathlib import Path
 import random
 import sys
 
@@ -8,22 +6,11 @@ from keras.callbacks import ModelCheckpoint
 import numpy as np
 
 from colormotion import dataset
-from colormotion.argparse import directory_path
+from colormotion.argparse import training_args_parser
 from colormotion.nn.generators import VideoFramesGenerator
 from colormotion.nn.layers import load_weights
 from colormotion.nn.model.user_guided import model
 from colormotion.user_guided import ab_and_mask_matrix
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description='Run training.')
-    parser.add_argument('--weights', type=Path, help='weights file')
-    parser.add_argument('--steps-per-epoch', type=int, default=2000)
-    parser.add_argument('--epochs', type=int, default=80)
-    parser.add_argument('--validation-steps', type=int, default=20)
-    parser.add_argument('--dry', action='store_true')
-    parser.add_argument('dataset', type=directory_path, help='dataset folder')
-    return parser.parse_args()
 
 
 class Generator(VideoFramesGenerator):
@@ -79,4 +66,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(parse_args())
+    main(training_args_parser().parse_args())

@@ -43,7 +43,7 @@ def encoder(l_input, ab_and_mask_input):
     x = Conv2D_default(256, name='conv3_2')(x)
     # conv3_3
     x = Conv2D_default(256, name='conv3_3')(x)
-    conv3_3_norm = BatchNormalization(name='conv3_3norm')(x)
+    conv3_3norm = BatchNormalization(name='conv3_3norm')(x)
     x = Downscale()(x)
 
     # conv4
@@ -80,10 +80,10 @@ def encoder(l_input, ab_and_mask_input):
     x = Conv2D_default(512, name='conv7_2')(x)
     # conv7_3
     x = Conv2D_default(512, name='conv7_3')(x)
-    return (BatchNormalization(name='conv7_3norm')(x), conv1_2norm, conv2_2norm, conv3_3_norm)
+    return (BatchNormalization(name='conv7_3norm')(x), conv1_2norm, conv2_2norm, conv3_3norm)
 
 
-def decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm):
+def decoder(features, conv1_2norm, conv2_2norm, conv3_3norm):
     # Shortcuts, transpose convolutions and some convolutions use a custom initializer
     custom_initializer = {
         'kernel_initializer': RandomNormal(stddev=.01),
@@ -94,7 +94,7 @@ def decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm):
     # conv8_1
     x = Conv2DTranspose(256, 4, padding='same', strides=2, name='conv8_1')(features)
     # Shortcut
-    shortcut = Conv2D(256, 3, padding='same', **custom_initializer, name='conv3_3_short')(conv3_3_norm)
+    shortcut = Conv2D(256, 3, padding='same', **custom_initializer, name='conv3_3_short')(conv3_3norm)
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
     # conv8_2
@@ -129,12 +129,22 @@ def decoder(features, conv1_2norm, conv2_2norm, conv3_3_norm):
     return Scale(100)(x)  # FIXME Scale uses a Lambda layer, preprocessing the output during training is probably faster
 
 
+def encoder_model():
+    l_input = Input(shape=(256, 256, 1), name='grayscale_input')
+    ab_and_mask_input = Input(shape=(256, 256, 3), name='ab_and_mask_input')
+    encoded_features, conv1_2norm, conv2_2norm, conv3_3norm = encoder(l_input, ab_and_mask_input)
+    print('Encoded features have shape {}'.format(K.int_shape(encoded_features)))
+    m = Model(inputs=[l_input, ab_and_mask_input], outputs=[encoded_features, conv1_2norm, conv2_2norm, conv3_3norm])
+    # m.compile(loss='mean_squared_error', optimizer='adam')
+    return m
+
+
 def model():
     l_input = Input(shape=(256, 256, 1), name='grayscale_input')
     ab_and_mask_input = Input(shape=(256, 256, 3), name='ab_and_mask_input')
-    encoded_features, conv1_2norm, conv2_2norm, conv3_3_norm = encoder(l_input, ab_and_mask_input)
+    encoded_features, conv1_2norm, conv2_2norm, conv3_3norm = encoder(l_input, ab_and_mask_input)
     print('Encoded features have shape {}'.format(K.int_shape(encoded_features)))
-    x = decoder(encoded_features, conv1_2norm, conv2_2norm, conv3_3_norm)
+    x = decoder(encoded_features, conv1_2norm, conv2_2norm, conv3_3norm)
     m = Model(inputs=[ab_and_mask_input, l_input],
               outputs=x)
     m.compile(loss='mean_squared_error', optimizer='adam')

@@ -69,11 +69,11 @@ def _load_weights_numpy(model, weights_path):
               'layer in the model: {}'.format(', '.join(weights_data.keys())))
 
 
-def load_weights(model, weights_path):
+def load_weights(model, weights_path, by_name=False):
     suffix = weights_path.suffix
     if suffix == '.npy':
         _load_weights_numpy(model, weights_path)
     elif suffix in ('.h5', '.hdf5'):
-        model.load_weights(str(weights_path))
+        model.load_weights(str(weights_path), by_name=by_name)
     else:
         raise NotImplementedError()
