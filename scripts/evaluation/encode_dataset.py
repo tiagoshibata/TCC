@@ -47,15 +47,15 @@ class InferenceConsumerPool(ConsumerPool):
                 if l:
                     print('Encoding batch of size {}'.format(len(l)))
                     start = time.time()
-                    encoded_batch = encoder.predict([np.array(x) for x in (l, ab_and_mask)])
-                    end = time.time()
-                    print('Encoded in {}'.format(end - start))
-                    for filename, encoded_features, conv1_2norm, conv2_2norm, conv3_3norm in zip(filenames, *encoded_batch):
-                        save_consumer_pool.put((filename, encoded_features, conv1_2norm, conv2_2norm, conv3_3norm))
+                    encoded_batch, _, _, _ = encoder.predict([np.array(x) for x in (l, ab_and_mask)])
+                    print('Encoded in {}'.format(time.time() - start))
+                    for filename, encoded_features in zip(filenames, encoded_batch):
+                        save_consumer_pool.put((filename, encoded_features))
 
 
 def main(args):
     scenes = dataset.get_all_scenes(args.dataset)
+    encoded_total = 0
     with InferenceConsumerPool(args.weights) as consume_pool:
         try:
             for scene, frames in scenes.items():
@@ -68,6 +68,8 @@ def main(args):
                         dataset.read_frame_lab(scene, frame, args.resolution),
                         encoded_path,
                     ))
+                encoded_total += len(frames)
+                print('Total encoded: {}'.format(encoded_total))
         finally:
             consume_pool.put(None)
 
