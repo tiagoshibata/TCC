@@ -135,7 +135,7 @@ def encoder_model():
     encoded_features, conv1_2norm, conv2_2norm, conv3_3norm = encoder(l_input, ab_and_mask_input)
     print('Encoded features have shape {}'.format(K.int_shape(encoded_features)))
     m = Model(inputs=[l_input, ab_and_mask_input], outputs=[encoded_features, conv1_2norm, conv2_2norm, conv3_3norm])
-    # m.compile(loss='mean_squared_error', optimizer='adam')
+    m.compile(loss='mean_squared_error', optimizer='adam')
     return m
 
 

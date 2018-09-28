@@ -4,6 +4,9 @@ import sys
 
 import pytest
 
+from colormotion.nn.graph import new_model_session
+from colormotion.nn.model.user_guided import encoder_model
+
 file_path = Path(__file__).resolve()
 root = file_path.parents[3]
 tests = file_path.parents[2]
@@ -29,12 +32,12 @@ def test_build_metadata():
     ))
 
 
-@pytest.mark.skip('WIP')
 def test_data_generators():
-    from train.filters_optical_flow import data_generators, model  # pylint: disable=import-error
-    m = model()
+    from train.filters_optical_flow import data_generators  # pylint: disable=import-error
+    m = encoder_model()
     m.summary()
-    train, test = data_generators(tests / 'dataset', m)
-    for _ in range(5):
-        next(train)
-        next(test)
+    with new_model_session() as session:
+        train, test = data_generators(tests / 'dataset', m, session)
+        for _ in range(5):
+            next(train)
+            next(test)
