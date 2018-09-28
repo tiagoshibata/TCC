@@ -32,6 +32,7 @@ def test_build_metadata():
     ))
 
 
+@pytest.mark.skip('WIP')
 def test_data_generators():
     from train.filters_optical_flow import data_generators  # pylint: disable=import-error
     m = encoder_model()

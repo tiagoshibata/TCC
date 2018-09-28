@@ -8,7 +8,7 @@ import numpy as np
 from colormotion import dataset
 from colormotion.argparse import training_args_parser
 from colormotion.nn.generators import VideoFramesGenerator
-from colormotion.nn.graph import model_session, new_model_session
+from colormotion.nn.graph import new_model_session
 from colormotion.nn.layers import load_weights
 from colormotion.nn.model.filters_optical_flow import interpolate_and_decode, warp_features
 from colormotion.nn.model.user_guided import encoder_model
