@@ -47,7 +47,7 @@ def interpolate_and_decode():
     conv2_2norm = Input(shape=(128, 128, 128), name='conv2_2norm_input')
     conv3_3norm = Input(shape=(64, 64, 256), name='conv3_3norm_input')
 
-    difference = Subtract()([features, warped_features])
+    difference = Subtract(name='features_minus_warped_features')([features, warped_features])
     # Composition mask
     mask = mask_network(difference)
     # Interpolate warped features and encoded features

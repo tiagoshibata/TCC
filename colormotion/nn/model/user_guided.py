@@ -16,7 +16,7 @@ def Downscale():  # pylint: disable=invalid-name
     return AveragePooling2D(pool_size=1, strides=2)
 
 
-def encoder(l_input, ab_and_mask_input):
+def encoder_head(l_input, ab_and_mask_input):
     # conv1
     # conv1_1
     ab_and_mask = Conv2D(64, 3, padding='same', name='ab_conv1_1')(ab_and_mask_input)
@@ -44,6 +44,11 @@ def encoder(l_input, ab_and_mask_input):
     # conv3_3
     x = Conv2D_default(256, name='conv3_3')(x)
     conv3_3norm = BatchNormalization(name='conv3_3norm')(x)
+    return x, conv1_2norm, conv2_2norm, conv3_3norm
+
+
+def encoder(l_input, ab_and_mask_input):
+    x, conv1_2norm, conv2_2norm, conv3_3norm = encoder_head(l_input, ab_and_mask_input)
     x = Downscale()(x)
 
     # conv4
@@ -80,7 +85,7 @@ def encoder(l_input, ab_and_mask_input):
     x = Conv2D_default(512, name='conv7_2')(x)
     # conv7_3
     x = Conv2D_default(512, name='conv7_3')(x)
-    return (BatchNormalization(name='conv7_3norm')(x), conv1_2norm, conv2_2norm, conv3_3norm)
+    return BatchNormalization(name='conv7_3norm')(x), conv1_2norm, conv2_2norm, conv3_3norm
 
 
 def decoder(features, conv1_2norm, conv2_2norm, conv3_3norm):
@@ -127,6 +132,15 @@ def decoder(features, conv1_2norm, conv2_2norm, conv3_3norm):
     # conv10_ab
     x = Conv2D(2, 1, activation='tanh', name='conv10_ab')(x)
     return Scale(100)(x)  # FIXME Scale uses a Lambda layer, preprocessing the output during training is probably faster
+
+
+def encoder_head_model():
+    l_input = Input(shape=(256, 256, 1), name='grayscale_input')
+    ab_and_mask_input = Input(shape=(256, 256, 3), name='ab_and_mask_input')
+    _, conv1_2norm, conv2_2norm, conv3_3norm = encoder_head(l_input, ab_and_mask_input)
+    m = Model(inputs=[l_input, ab_and_mask_input], outputs=[conv1_2norm, conv2_2norm, conv3_3norm])
+    m.compile(loss='mean_squared_error', optimizer='adam')
+    return m
 
 
 def encoder_model():
