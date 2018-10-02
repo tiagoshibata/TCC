@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import random
 from multiprocessing import Process, Pipe
+from pathlib import Path
 import sys
 
 from keras import backend as K
@@ -93,7 +94,7 @@ class Generator(VideoFramesGenerator):
 
 def data_generators(dataset_folder, encoded_features_path, skip_connections_pipe):
     flow_params = {
-        'batch_size': 2,
+        'batch_size': 4,
         'target_size': (256, 256),
         'seed': random.randrange(sys.maxsize),
     }
@@ -104,16 +105,14 @@ def data_generators(dataset_folder, encoded_features_path, skip_connections_pipe
 
 
 def main(args):
-    assert args.weights, 'This training requires a pre-trained, frozen encoder'
-
     child_pipe, parent_pipe = Pipe()
-    p = Process(target=skip_connections_eval_cpu, args=(child_pipe, args.weights, (256, 256)))
+    p = Process(target=skip_connections_eval_cpu, args=(child_pipe, args.encoder_weights, (256, 256)))
     p.start()
 
     tf_allow_growth()
     train_generator, _ = data_generators(args.dataset, args.encoded_features_path, parent_pipe)
 
-    checkpoint = ModelCheckpoint('epoch-{epoch:03d}.h5', verbose=1, period=5)
+    checkpoint = ModelCheckpoint('epoch-{epoch:03d}-{loss:.3f}.h5', verbose=1, period=1)
     decoder = interpolate_and_decode()
     load_weights(decoder, args.weights, by_name=True)
     fit = decoder.fit_generator(
@@ -135,5 +134,6 @@ def main(args):
 
 if __name__ == '__main__':
     parser = training_args_parser()
+    parser.add_argument('--encoder_weights', type=Path, required=True, help='encoder weights')
     parser.add_argument('encoded_features_path', type=directory_path, help='directory with encoded features')
     main(parser.parse_args())
