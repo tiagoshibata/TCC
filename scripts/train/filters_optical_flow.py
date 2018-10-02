@@ -3,24 +3,31 @@ import random
 from multiprocessing import Process, Pipe
 import sys
 
+from keras import backend as K
 from keras.callbacks import ModelCheckpoint
 import numpy as np
+import tensorflow as tf
 
 from colormotion import dataset
 from colormotion.argparse import directory_path, training_args_parser
 from colormotion.nn.generators import VideoFramesGenerator
 from colormotion.nn.layers import load_weights
 from colormotion.nn.model.filters_optical_flow import interpolate_and_decode, warp_features
-from colormotion.nn.model.user_guided import encoder_head_model
+from colormotion.nn.model.user_guided import encoder_model
 from colormotion.user_guided import ab_and_mask_matrix
 
 
-def skip_connections_eval_cpu(pipe, weights, target_size):
-    import os
-    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+def tf_allow_growth():
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    config.gpu_options.visible_device_list = "0"
+    K.set_session(tf.Session(config=config))
 
-    encoder = encoder_head_model()
+
+def skip_connections_eval_cpu(pipe, weights, target_size):
+    tf_allow_growth()
+
+    encoder = encoder_model()
     load_weights(encoder, weights, by_name=True)
 
     while True:
@@ -50,27 +57,21 @@ class Generator(VideoFramesGenerator):
 
     def load_batch(self, start_frames, target_size):  # pylint: disable=too-many-locals
         assert self.contiguous_count == 1
-        x_batch = [[], []]
+        x_batch = [[]]
         y_batch = []
         self.skip_connections_pipe.send(start_frames)
 
-        def load_encoded_features(scene, frame):
-            return dataset.get_frame_path(self.encoded_features_path,
-                                          scene.relative_to(scene.parents[1]),
-                                          frame)
-
         for scene, frame in start_frames:
             features_tm1 = np.load('{}_encoded.npz'.format(
-                load_encoded_features(scene, frame)))['arr_0']
-            features = np.load('{}_encoded.npz'.format(
-                load_encoded_features(scene, frame + self.contiguous_count)))['arr_0']
+                dataset.get_frame_path(self.encoded_features_path,
+                                       scene.relative_to(scene.parents[1]),
+                                       frame)))['arr_0']
 
             l, ab = dataset.read_frame_lab(scene, frame + self.contiguous_count, target_size)
             l_tm1, _ = dataset.read_frame_lab(scene, frame, target_size)
             warped_features = warp_features(l_tm1, l, features_tm1)
 
             x_batch[0].append(warped_features)
-            x_batch[1].append(features)
             y_batch.append(ab)
         for skip_connection in self.skip_connections_pipe.recv():
             x_batch.append(skip_connection)
@@ -82,14 +83,14 @@ class Generator(VideoFramesGenerator):
 
 def data_generators(dataset_folder, encoded_features_path, skip_connections_pipe):
     flow_params = {
-        'batch_size': 8,
+        'batch_size': 1,
         'target_size': (256, 256),
         'seed': random.randrange(sys.maxsize),
     }
     # TODO Split train and test datasets
     train = Generator(encoded_features_path, skip_connections_pipe).flow_from_directory(dataset_folder, **flow_params)
-    test = Generator(encoded_features_path, skip_connections_pipe).flow_from_directory(dataset_folder, **flow_params)
-    return train, test
+    # test = Generator(encoded_features_path, skip_connections_pipe).flow_from_directory(dataset_folder, **flow_params)
+    return train, None
 
 
 def main(args):
@@ -99,7 +100,8 @@ def main(args):
     p = Process(target=skip_connections_eval_cpu, args=(child_pipe, args.weights, (256, 256)))
     p.start()
 
-    train_generator, test_generator = data_generators(args.dataset, args.encoded_features_path, parent_pipe)
+    tf_allow_growth()
+    train_generator, _ = data_generators(args.dataset, args.encoded_features_path, parent_pipe)
 
     checkpoint = ModelCheckpoint('epoch-{epoch:03d}.h5', verbose=1, period=5)
     decoder = interpolate_and_decode()
