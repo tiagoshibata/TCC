@@ -13,8 +13,7 @@ from colormotion.argparse import directory_path, training_args_parser
 from colormotion.nn.generators import VideoFramesGenerator
 from colormotion.nn.layers import load_weights
 from colormotion.nn.model.filters_optical_flow import interpolate_and_decode, warp_features
-from colormotion.nn.model.user_guided import encoder_model
-from colormotion.user_guided import ab_and_mask_matrix
+from colormotion.nn.model.user_guided import encoder_head_model
 
 
 def tf_allow_growth():
@@ -24,22 +23,31 @@ def tf_allow_growth():
     K.set_session(tf.Session(config=config))
 
 
+def encoded_feature_path(root, scene, frame):
+    return dataset.get_frame_path(root,
+                                  scene.relative_to(scene.parents[1]),
+                                  frame)
+
+
 def skip_connections_eval_cpu(pipe, weights, target_size):
     tf_allow_growth()
 
-    encoder = encoder_model()
+    encoder = encoder_head_model()
     load_weights(encoder, weights, by_name=True)
 
     while True:
         try:
-            start_frames = pipe.recv()
+            start_frames, encoded_features_path = pipe.recv()
         except EOFError:
             break  # end of data from parent process
         l_batch, ab_and_mask_matrix_t_batch = [], []
         for scene, frame in start_frames:
-            l, ab = dataset.read_frame_lab(scene, frame, target_size)
+            l, _ = dataset.read_frame_lab(scene, frame + 1, target_size)
             l_batch.append(l)
-            ab_and_mask_matrix_t_batch.append(ab_and_mask_matrix(ab, .00008))
+
+            ab_and_mask = np.load('{}_encoded_mask.npz'.format(
+                encoded_feature_path(encoded_features_path, scene, frame + 1)))['arr_0']
+            ab_and_mask_matrix_t_batch.append(ab_and_mask)
         pipe.send(
             encoder.predict([np.array(x) for x in (l_batch, ab_and_mask_matrix_t_batch)])
         )
@@ -57,21 +65,23 @@ class Generator(VideoFramesGenerator):
 
     def load_batch(self, start_frames, target_size):  # pylint: disable=too-many-locals
         assert self.contiguous_count == 1
-        x_batch = [[]]
+        x_batch = [[], []]
         y_batch = []
-        self.skip_connections_pipe.send(start_frames)
+
+        self.skip_connections_pipe.send((start_frames, self.encoded_features_path))
 
         for scene, frame in start_frames:
             features_tm1 = np.load('{}_encoded.npz'.format(
-                dataset.get_frame_path(self.encoded_features_path,
-                                       scene.relative_to(scene.parents[1]),
-                                       frame)))['arr_0']
+                encoded_feature_path(self.encoded_features_path, scene, frame)))['arr_0']
+            features = np.load('{}_encoded.npz'.format(
+                encoded_feature_path(self.encoded_features_path, scene, frame + self.contiguous_count)))['arr_0']
 
             l, ab = dataset.read_frame_lab(scene, frame + self.contiguous_count, target_size)
             l_tm1, _ = dataset.read_frame_lab(scene, frame, target_size)
             warped_features = warp_features(l_tm1, l, features_tm1)
 
             x_batch[0].append(warped_features)
+            x_batch[1].append(features)
             y_batch.append(ab)
         for skip_connection in self.skip_connections_pipe.recv():
             x_batch.append(skip_connection)
@@ -83,7 +93,7 @@ class Generator(VideoFramesGenerator):
 
 def data_generators(dataset_folder, encoded_features_path, skip_connections_pipe):
     flow_params = {
-        'batch_size': 1,
+        'batch_size': 2,
         'target_size': (256, 256),
         'seed': random.randrange(sys.maxsize),
     }

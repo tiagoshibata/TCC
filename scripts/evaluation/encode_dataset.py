@@ -29,28 +29,30 @@ class InferenceConsumerPool(ConsumerPool):
         self.batch_size = batch_size
         super().__init__(None, num_workers=1, queue_size=8)
 
-    def thread(self):
+    def thread(self):  # pylint: disable=too-many-locals
         encoder = encoder_model()
         load_weights(encoder, self.weights, by_name=True)
         with ConsumerPool(lambda args: np.savez_compressed(*args), queue_size=16) as save_consumer_pool:
             while True:
-                l, ab_and_mask, filenames = [], [], []
+                l_batch, ab_and_mask_batch, filenames = [], [], []
                 for _ in range(self.batch_size):
                     job = self.queue.get()
                     if job is None:
+                        self.queue.task_done()
                         break
                     lab, encoded_filename = job
-                    l.append(lab[0])
-                    ab_and_mask.append(ab_and_mask_matrix(lab[1], .00008))
+                    l_batch.append(lab[0])
+                    ab_and_mask_batch.append(ab_and_mask_matrix(lab[1], .00008))
                     filenames.append(encoded_filename)
                     self.queue.task_done()
-                if l:
-                    print('Encoding batch of size {}'.format(len(l)))
+                if l_batch:
+                    print('Encoding batch of size {}'.format(len(l_batch)))
                     start = time.time()
-                    encoded_batch, _, _, _ = encoder.predict([np.array(x) for x in (l, ab_and_mask)])
+                    encoded_batch, _, _, _ = encoder.predict([np.array(x) for x in (l_batch, ab_and_mask_batch)])
                     print('Encoded in {}'.format(time.time() - start))
-                    for filename, encoded_features in zip(filenames, encoded_batch):
+                    for filename, ab_and_mask, encoded_features in zip(filenames, ab_and_mask_batch, encoded_batch):
                         save_consumer_pool.put((filename, encoded_features))
+                        save_consumer_pool.put(('{}_mask'.format(filename), ab_and_mask))
 
 
 def main(args):
