@@ -9,7 +9,7 @@ def new_model_session():
     with graph.as_default():  # pylint: disable=not-context-manager
         session = tf.Session()
         with session.as_default():  # pylint: disable=not-context-manager
-            yield model_session((graph, session))
+            yield lambda: model_session((graph, session))
 
 
 @contextmanager
