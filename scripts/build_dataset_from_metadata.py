@@ -23,13 +23,15 @@ def write_video_scenes(video, scene_boundaries, dataset_path, resolution):
     if not scene_boundaries:
         return
     scene_boundaries = iter(scene_boundaries)
-    destination = dataset.create_video_destination_folder(video, dataset_path)
+    destination = dataset.create_video_destination_folder(video, dataset_path, exist_ok=True)
     video = cv2.VideoCapture(str(video))
     scene_lower, scene_upper = next(scene_boundaries)
 
     def write(path, frame):
+        if path.exists():
+            return
         frame = cv2.resize(frame, (resolution[0], resolution[1]), interpolation=cv2.INTER_AREA)
-        cv2.imwrite(path, frame, [cv2.IMWRITE_PNG_COMPRESSION, 9])
+        cv2.imwrite(str(path), frame, [cv2.IMWRITE_PNG_COMPRESSION, 9])
 
     with ConsumerPool(lambda args: write(*args)) as write_consumer_pool:
         for frame_count in count():
@@ -39,7 +41,7 @@ def write_video_scenes(video, scene_boundaries, dataset_path, resolution):
             if scene_lower <= frame_count <= scene_upper:
                 scene = dataset.get_scene_directory(destination, scene_lower)
                 write_consumer_pool.put((
-                    str(dataset.get_frame_path(scene, frame_count)),
+                    dataset.get_frame_path(scene, frame_count),
                     frame,
                 ))
             elif frame_count > scene_upper:

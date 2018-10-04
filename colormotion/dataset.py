@@ -14,14 +14,17 @@ def hash_file(filename):
         return hashlib.blake2b(f.read(32 * 1024), digest_size=20).hexdigest()  # pylint: disable=unexpected-keyword-arg
 
 
-def create_video_destination_folder(video_filename, root):
+def create_video_destination_folder(video_filename, root, exist_ok=False):
     root = Path(root)
     if not root.exists():
         fail('Folder {} does not exist'.format(root))
     video_destination = root / hash_file(video_filename)
     if video_destination.exists():
-        fail('Video has already been processed (folder {} exists)'.format(video_destination))
-    video_destination.mkdir()
+        message = 'Video has already been processed (folder {} exists)'.format(video_destination)
+        if not exist_ok:
+            fail(message)
+        print(message)
+    video_destination.mkdir(exist_ok=exist_ok)
     return video_destination
 
 
