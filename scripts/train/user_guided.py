@@ -39,8 +39,8 @@ def data_generators(dataset_folder):
         'seed': random.randrange(sys.maxsize),
     }
     # TODO Split train and test datasets
-    train = Generator().flow_from_directory(dataset_folder, **flow_params)
-    test = Generator().flow_from_directory(dataset_folder, **flow_params)
+    train = Generator().flow_from_directory(dataset_folder / 'train', **flow_params)
+    test = Generator().flow_from_directory(dataset_folder / 'validation', **flow_params)
     return train, test
 
 
