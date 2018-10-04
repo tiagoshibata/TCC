@@ -2,6 +2,8 @@
 import argparse
 from itertools import count
 import json
+import random
+import sys
 
 import cv2
 
@@ -60,13 +62,36 @@ def build_dataset_from_metadata(movies_path, metadata_path, dataset_path, resolu
             for video_hash, scene_boundaries in metadata.items():
                 video_path = video_hashes.get(video_hash)
                 if not video_path:
-                    raise RuntimeError('Video with hash {} not found'.format(video_hash))
+                    print('ERROR: Video with hash {} not found'.format(video_hash), file=sys.stderr)
+                    continue
                 print('Writing scenes {} from {}'.format(scene_boundaries, video_path))
                 scene_consumer_pool.put((video_path, scene_boundaries, dataset_path, resolution))
 
 
+def train_validation_split(dataset_path):
+    train_path = dataset_path / 'train'
+    validation_path = dataset_path / 'validation'
+
+    movie_scenes = {movie: list(movie.iterdir())
+                    for movie in train_path.iterdir()}
+    scene_list = []
+    for movie, scenes in movie_scenes.items():
+        scene_list.extend(((movie, scene) for scene in scenes))
+    print('{} scenes in dataset, splitting into train/validation'.format(len(scene_list)))
+
+    random.shuffle(scene_list)
+    validation = scene_list[:len(scene_list) // 5]
+    for movie, scene in validation:
+        movie_path = validation_path / movie.stem
+        movie_path.mkdir(exist_ok=True)
+        (scene).rename(movie_path / scene.stem)
+
+
 def main(args):
     build_dataset_from_metadata(args.movies, args.metadata, args.dataset, args.resolution)
+    (args.dataset / 'train').mkdir(exist_ok=True)
+    (args.dataset / 'validation').mkdir(exist_ok=True)
+    train_validation_split(args.dataset)
 
 
 if __name__ == '__main__':
