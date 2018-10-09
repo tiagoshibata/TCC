@@ -1,3 +1,6 @@
+*.h5
+*.hdf5
+
 *.egg-info
 .coverage
 htmlcov

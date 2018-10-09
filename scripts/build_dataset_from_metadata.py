@@ -83,16 +83,25 @@ def train_validation_split(dataset_path):
     train_path = dataset_path / 'train'
     validation_path = dataset_path / 'validation'
 
-    movie_scenes = {movie: list(movie.iterdir())
+    train_scenes = {movie: list(movie.iterdir())
                     for movie in train_path.iterdir()}
     scene_list = []
-    for movie, scenes in movie_scenes.items():
+    for movie, scenes in train_scenes.items():
         scene_list.extend(((movie, scene) for scene in scenes))
-    print('{} scenes in dataset, splitting into train/validation'.format(len(scene_list)))
+    validation_scenes = [list(movie.iterdir())
+                         for movie in train_path.iterdir()]
+    validation_scene_count = sum(len(x) for x in validation_scenes)
+    total_scenes = len(scene_list) + validation_scene_count
+    print('{} scenes in dataset, splitting into train/validation'.format(total_scenes))
+
+    move_to_validation_count = total_scenes // 5 - validation_scene_count
+    if move_to_validation_count < 1:
+        return
+    print('Moving {} scenes to validation'.format(move_to_validation_count))
 
     random.shuffle(scene_list)
-    validation = scene_list[:len(scene_list) // 5]
-    for movie, scene in validation:
+    move_to_validation = scene_list[:move_to_validation_count]
+    for movie, scene in move_to_validation:
         movie_path = validation_path / movie.stem
         movie_path.mkdir(exist_ok=True)
         (scene).rename(movie_path / scene.stem)
