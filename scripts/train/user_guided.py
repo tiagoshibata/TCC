@@ -3,6 +3,7 @@ import random
 import sys
 
 from keras.callbacks import ModelCheckpoint
+from keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 
 from colormotion import dataset
@@ -17,12 +18,32 @@ class Generator(VideoFramesGenerator):
     '''Generate groups of contiguous frames from a dataset.
 
     The generated data has inputs [l_input, ab_and_mask_input].'''
+    def __init__(self, **kwargs):
+        augment = kwargs.pop('augment', False)
+        super().__init__(**kwargs)
+        self.augmentation = ImageDataGenerator() if augment else None
+
+    def augment(self, x):
+        return self.augmentation.apply_transform(x, {
+            'theta': random.uniform(-15, 15),
+            'tx': random.uniform(-4, 4),
+            'ty': random.uniform(-4, 4),
+            'shear': random.uniform(-20, 20),
+            'zx': random.uniform(.9, 1.4),
+            'zy': random.uniform(.9, 1.4),
+            'flip_horizontal': random.choices((False, True)),
+        })
+
     def load_batch(self, start_frames, target_size):
         assert self.contiguous_count == 1
         x_batch = [[], []]
         y_batch = []
         for scene, frame in start_frames:
             l, ab = dataset.read_frame_lab(scene, frame + self.contiguous_count, target_size)
+            if self.augmentation:
+                x = np.dstack((l, ab))
+                x = self.augment(x)
+                l, ab = x[:, :, :1], x[:, :, 1:]
             x_batch[0].append(ab_and_mask_matrix(ab, .00008))
             x_batch[1].append(l)
             y_batch.append(ab)
@@ -39,7 +60,7 @@ def data_generators(dataset_folder):
         'seed': random.randrange(sys.maxsize),
     }
     # TODO Split train and test datasets
-    train = Generator().flow_from_directory(dataset_folder / 'train', **flow_params)
+    train = Generator(augment=True).flow_from_directory(dataset_folder / 'train', **flow_params)
     test = Generator().flow_from_directory(dataset_folder / 'validation', **flow_params)
     return train, test
 

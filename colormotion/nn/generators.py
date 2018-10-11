@@ -19,6 +19,7 @@ class VideoFramesGenerator():
 
     def flow_from_directory(self, root, batch_size=32, target_size=None, seed=None):
         contiguous_frames = self.get_contiguous_frames(dataset.get_all_scenes(root))
+        print('Dataset {} has {} contiguous subscenes'.format(root, len(contiguous_frames)))
         random = Random(seed)
         while True:
             yield self.load_batch(random.choices(contiguous_frames, k=batch_size),
