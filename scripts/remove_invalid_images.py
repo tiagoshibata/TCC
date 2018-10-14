@@ -20,8 +20,15 @@ def validate_images(dataset_path):
             new_path = 'duplicate{}.{}'.format(path.suffix, path.stem)
             path.rename(new_path)
             path = new_path
-        if cv2.imread(str(path)) is None:
-            print('Cannot read image {}'.format(path))
+        image = cv2.imread(str(path))
+        try:
+            if image is None:
+                raise RuntimeError('Cannot read image {}'.format(path))
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            histogram = sorted(cv2.calcHist([gray], [0], None, [64], [0, 256]) / (gray.shape[0] * gray.shape[1]))
+            if histogram[-1] + histogram[-2] >= 0.9:
+                raise RuntimeError('Histogram shows few light variation')
+        except RuntimeError:
             path.unlink()
 
     with ConsumerPool(validate) as validate_consumer_pool:
