@@ -29,8 +29,8 @@ class Generator(VideoFramesGenerator):
             'tx': random.uniform(-4, 4),
             'ty': random.uniform(-4, 4),
             'shear': random.uniform(-20, 20),
-            'zx': random.uniform(.9, 1.4),
-            'zy': random.uniform(.9, 1.4),
+            'zx': random.uniform(.7, 1),
+            'zy': random.uniform(.7, 1),
             'flip_horizontal': random.choices((False, True)),
         })
 
@@ -44,7 +44,7 @@ class Generator(VideoFramesGenerator):
                 x = np.dstack((l, ab))
                 x = self.augment(x)
                 l, ab = x[:, :, :1], x[:, :, 1:]
-            x_batch[0].append(ab_and_mask_matrix(ab, .00008))
+            x_batch[0].append(ab_and_mask_matrix(ab, .00016))
             x_batch[1].append(l)
             y_batch.append(ab)
         return [np.array(model_input) for model_input in x_batch], np.array(y_batch)
