@@ -68,17 +68,6 @@ def build_dataset_from_metadata(movies_path, metadata_path, dataset_path, resolu
                 scene_consumer_pool.put((video_path, scene_boundaries, dataset_path, resolution))
 
 
-def validate_images(dataset_path):
-    print('Validating images in dataset...')
-    def validate(path):
-        if cv2.imread(str(path)) is None:
-            print('Cannot read image {}'.format(path))
-
-    with ConsumerPool(validate) as validate_consumer_pool:
-        for image_path in dataset_path.rglob("*.png"):
-            validate_consumer_pool.put(image_path)
-
-
 def train_validation_split(dataset_path):
     train_path = dataset_path / 'train'
     validation_path = dataset_path / 'validation'
@@ -112,7 +101,6 @@ def main(args):
     (args.dataset / 'validation').mkdir(exist_ok=True)
     build_dataset_from_metadata(args.movies, args.metadata, args.dataset / 'train', args.resolution)
     train_validation_split(args.dataset)
-    validate_images(args.dataset)
 
 
 if __name__ == '__main__':
