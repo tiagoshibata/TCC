@@ -28,7 +28,8 @@ def validate_images(dataset_path):
             histogram = sorted(cv2.calcHist([gray], [0], None, [64], [0, 256]) / (gray.shape[0] * gray.shape[1]))
             if histogram[-1] + histogram[-2] >= 0.9:
                 raise RuntimeError('Histogram shows few light variation')
-        except RuntimeError:
+        except RuntimeError as e:
+            print(e)
             path.unlink()
 
     with ConsumerPool(validate) as validate_consumer_pool:
