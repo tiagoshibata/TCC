@@ -4,7 +4,8 @@ Removing duplicates:
 find -not -empty -type f -printf "%s\n" | sort -rn | uniq -d | xargs -I{} -n1 find -type f -size {}c -print0 |
     xargs -0 md5sum | sort | uniq -w32 --all-repeated=separate | cut -c 35- | remove_duplicates.py
 Or:
-find ! -empty -type f -exec md5sum {} + | sort | uniq -w32 -dD --all-repeated=separate | cut -c 35- | remove_duplicates.py
+find ! -empty -type f -exec md5sum {} + | sort | uniq -w32 -dD --all-repeated=separate | cut -c 35- |
+    remove_duplicates.py
 Removing documents:
 ls | xargs -d'\n' file -F/ -- | grep document | cut -d/ -f1 | xargs -d'\n' rm --
 Downloading ImageNet images:
