@@ -20,7 +20,7 @@ class Generator(VideoFramesGenerator):
     The generated data has inputs [l_input, ab_and_mask_input].'''
     def __init__(self, **kwargs):
         augment = kwargs.pop('augment', False)
-        super().__init__(**kwargs)
+        super().__init__(contiguous_count=0, **kwargs)
         self.augmentation = ImageDataGenerator() if augment else None
 
     def augment(self, x):
@@ -35,11 +35,11 @@ class Generator(VideoFramesGenerator):
         })
 
     def load_batch(self, start_frames, target_size):
-        assert self.contiguous_count == 1
+        assert self.contiguous_count == 0
         x_batch = [[], []]
         y_batch = []
         for scene, frame in start_frames:
-            l, ab = dataset.read_frame_lab(scene, frame + self.contiguous_count, target_size)
+            l, ab = dataset.read_frame_lab(scene, frame, target_size)
             if self.augmentation:
                 x = np.dstack((l, ab))
                 x = self.augment(x)

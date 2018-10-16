@@ -39,8 +39,10 @@ def get_scene_directory(root, scene, mkdir=True):
 
 
 def get_frame_path(*args):
-    scene_directory, frame_number = Path(*args[:-1]), args[-1]
-    return scene_directory / '{:06d}.png'.format(frame_number)
+    scene_directory, frame = Path(*args[:-1]), args[-1]
+    if isinstance(frame, int):
+        frame = '{:06d}.png'.format(frame)
+    return scene_directory / frame
 
 
 def read_image(filename, color=True, resolution=None):
