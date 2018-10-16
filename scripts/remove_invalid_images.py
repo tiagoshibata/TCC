@@ -34,6 +34,11 @@ def validate_images(dataset_path):
             str(path)
         except UnicodeEncodeError as e:
             print('Filename has invalid UTF-8 characters')
+            try:
+                str(path.suffix)
+            except UnicodeEncodeError as e:
+                print('Extension has invalid UTF-8 characters, skipping')
+                return
             new_path = Path('{}.{}'.format(uuid.uuid4(), path.suffix))
             path.rename(new_path)
             path = new_path
@@ -54,8 +59,11 @@ def validate_images(dataset_path):
             if histogram[-1] + histogram[-2] >= 0.9:
                 raise RuntimeError('Histogram shows few light variation')
         except RuntimeError as e:
-            print('{}: {}'.format(path, e))
             path.unlink()
+            try:
+                print('{}: {}'.format(path, e))
+            except UnicodeEncodeError:
+                print(e)
 
     with ConsumerPool(validate) as validate_consumer_pool:
         for image_path in dataset_path.rglob('*'):

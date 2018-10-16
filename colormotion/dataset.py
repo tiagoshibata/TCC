@@ -87,14 +87,22 @@ def lab_to_bgr(l, ab):
     return bgr
 
 
-def get_scenes(movie_directory):
-    scenes = {scene: sorted(int(frame.stem) for frame in scene.iterdir())
+def get_scenes(movie_directory, names_as_int=True):
+    if names_as_int:
+        def parse_filename(path):
+            assert path.suffix == '.png'
+            assert path.stem.isnumeric() and len(path.stem) == 6
+            return int(path.stem)
+    else:
+        def parse_filename(path):
+            return path
+    scenes = {scene: sorted(parse_filename(frame) for frame in scene.iterdir())
               for scene in Path(movie_directory).iterdir()}
     return OrderedDict(sorted(scenes.items()))
 
 
-def get_all_scenes(dataset_directory):
+def get_all_scenes(dataset_directory, names_as_int=True):
     scenes = {scene: frames
               for movie in Path(dataset_directory).iterdir()
-              for scene, frames in get_scenes(movie).items()}
+              for scene, frames in get_scenes(movie, names_as_int=names_as_int).items()}
     return OrderedDict(sorted(scenes.items()))

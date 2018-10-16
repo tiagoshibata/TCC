@@ -22,16 +22,25 @@ class Generator(VideoFramesGenerator):
         augment = kwargs.pop('augment', False)
         super().__init__(contiguous_count=0, **kwargs)
         self.augmentation = ImageDataGenerator() if augment else None
+        self.random = None
+
+    def flow_from_directory(self, root, batch_size=32, target_size=None, seed=None):
+        contiguous_frames = self.get_contiguous_frames(dataset.get_all_scenes(root, names_as_int=False))
+        print('Dataset {} has {} contiguous subscenes'.format(root, len(contiguous_frames)))
+        self.random = random.Random(seed)
+        while True:
+            yield self.load_batch(self.random.choices(contiguous_frames, k=batch_size),
+                                  target_size=target_size)
 
     def augment(self, x):
         return self.augmentation.apply_transform(x, {
-            'theta': random.uniform(-15, 15),
-            'tx': random.uniform(-4, 4),
-            'ty': random.uniform(-4, 4),
-            'shear': random.uniform(-20, 20),
-            'zx': random.uniform(.7, 1),
-            'zy': random.uniform(.7, 1),
-            'flip_horizontal': random.choices((False, True)),
+            'theta': self.random.uniform(-15, 15),
+            'tx': self.random.uniform(-4, 4),
+            'ty': self.random.uniform(-4, 4),
+            'shear': self.random.uniform(-20, 20),
+            'zx': self.random.uniform(.7, 1),
+            'zy': self.random.uniform(.7, 1),
+            'flip_horizontal': self.random.choices((False, True)),
         })
 
     def load_batch(self, start_frames, target_size):
