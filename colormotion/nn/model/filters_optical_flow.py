@@ -4,6 +4,7 @@ Some concepts are taken from https://arxiv.org/abs/1703.09211.
 '''
 import keras.backend as K
 from keras.layers import Add, Conv2D, Input, Lambda, Multiply, Subtract
+from keras.losses import mean_squared_error
 from keras.models import Model
 
 from colormotion.optical_flow import numerical_optical_flow, warp
@@ -57,4 +58,23 @@ def interpolate_and_decode():
     m = Model(inputs=[warped_features, features, conv1_2norm, conv2_2norm, conv3_3norm],
               outputs=x)
     m.compile(loss='mean_squared_error', optimizer='adam')
+    return m
+
+
+def model():
+    l_input = Input(shape=(256, 256, 1), name='grayscale_input')
+    ab_and_mask_input = Input(shape=(256, 256, 3), name='ab_and_mask_input')
+    encoded_features, conv1_2norm, conv2_2norm, conv3_3norm = user_guided.encoder(l_input, ab_and_mask_input)
+    print('Encoded features have shape {}'.format(K.int_shape(encoded_features)))
+
+    warped_features = Input(shape=(32, 32, 512), name='warped_features')
+    difference = Subtract(name='features_minus_warped_features')([encoded_features, warped_features])
+    # Composition mask
+    mask = mask_network(difference)
+    # Interpolate warped features and encoded features
+    interpolated_features = interpolate(warped_features, encoded_features, mask)
+    x = user_guided.decoder(interpolated_features, conv1_2norm, conv2_2norm, conv3_3norm)
+    m = Model(inputs=[ab_and_mask_input, l_input, warped_features],
+              outputs=[x, encoded_features])
+    m.compile(loss=lambda y_true, y_pred: mean_squared_error(y_true, y_pred[0]), optimizer='adam')
     return m
