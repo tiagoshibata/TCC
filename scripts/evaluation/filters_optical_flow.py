@@ -7,10 +7,8 @@ import numpy as np
 
 from colormotion import dataset
 from colormotion.argparse import directory_path
-from colormotion.nn.graph import new_model_session
 from colormotion.nn.layers import load_weights
-from colormotion.nn.model.filters_optical_flow import interpolate_and_decode, warp_features
-from colormotion.nn.model.user_guided import encoder_model
+from colormotion.nn.model.filters_optical_flow import model, warp_features
 from colormotion.user_guided import ab_and_mask_matrix
 
 
@@ -24,37 +22,32 @@ def parse_args():
     return parser.parse_args()
 
 
-def predict(session, model, inputs):
-    with session():
-        return model.predict([
-            np.expand_dims(x, axis=0) for x in inputs
-        ], verbose=1)
-
-
 def main(args):  # pylint: disable=too-many-locals
     scenes = dataset.get_all_scenes(args.dataset)
-    with new_model_session() as decoder_session:
-        decoder = interpolate_and_decode()
-        load_weights(decoder, args.decoder)
-    with new_model_session() as encoder_session:
-        encoder = encoder_model()
-        load_weights(encoder, args.encoder, by_name=True)
+    m = model()
+    load_weights(m, args.encoder, by_name=True)
+    load_weights(m, args.decoder, by_name=True)
 
     for scene, frames in scenes.items():
-        for frame_tm1, frame in zip((None, *frames[1:]), frames):
-            l_tm1, ab_tm1 = dataset.read_frame_lab(scene, frame_tm1 or frame, (256, 256))
+        l_tm1 = None
+        for frame in frames:
             l, ab = dataset.read_frame_lab(scene, frame, (256, 256))
+            if l_tm1 is None:
+                # Set warped_features = encoded_features on the first frame
+                _, warped_features, _ = m.predict([
+                    np.array([ab_and_mask_matrix(ab, .00016)]), np.array([l]), np.empty((1, 32, 32, 512))], verbose=1)
+            else:
+                warped_features = warp_features(l_tm1, l, interpolated_features_tm1)[np.newaxis]
 
-            features_tm1, _, _, _ = predict(encoder_session, encoder, [l_tm1, ab_and_mask_matrix(ab_tm1, .00008)])
-            features, conv1_2norm, conv2_2norm, conv3_3norm = predict(
-                encoder_session, encoder, [l, ab_and_mask_matrix(ab, .00008)])
-            warped_features = warp_features(l_tm1, l, features_tm1[0])
-            x = predict(decoder_session, decoder,
-                        [np.array([warped_features]), features, conv1_2norm, conv2_2norm, conv3_3norm])
+            x, _, interpolated_features = m.predict([
+                np.array([ab_and_mask_matrix(ab, .00016)]), np.array([l]), warped_features], verbose=1)
 
             image = np.round(255 * dataset.lab_to_bgr(l, x[0])).astype('uint8')
             cv2.imshow('Video', image)
             cv2.waitKey(1)
+
+            interpolated_features_tm1 = interpolated_features[0]
+            l_tm1 = l
 
 
 if __name__ == '__main__':

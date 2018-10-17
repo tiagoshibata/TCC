@@ -19,7 +19,7 @@ def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
 def mask_network(difference):
     # TODO Scale so that range is approx. 0-1
     x = Conv2D_default(16, name='mask_conv1')(difference)
-    x = Conv2D_default(32, name='mask_conv2')(x)
+    x = Conv2D_default(24, name='mask_conv2')(x)
     return Conv2D_default(1, name='mask_conv3')(x)
 
 
@@ -75,6 +75,6 @@ def model():
     interpolated_features = interpolate(warped_features, encoded_features, mask)
     x = user_guided.decoder(interpolated_features, conv1_2norm, conv2_2norm, conv3_3norm)
     m = Model(inputs=[ab_and_mask_input, l_input, warped_features],
-              outputs=[x, encoded_features])
+              outputs=[x, encoded_features, interpolated_features])
     m.compile(loss=lambda y_true, y_pred: mean_squared_error(y_true, y_pred[0]), optimizer='adam')
     return m
