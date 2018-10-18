@@ -88,13 +88,17 @@ def lab_to_bgr(l, ab):
 
 
 def get_scenes(movie_directory, names_as_int=True):
+    def parse_filename_as_int(path):
+        assert path.suffix == '.png'
+        assert path.stem.isnumeric() and len(path.stem) == 6
+        return int(path.stem)
+
     if names_as_int:
-        def parse_filename(path):
-            assert path.suffix == '.png'
-            assert path.stem.isnumeric() and len(path.stem) == 6
-            return int(path.stem)
+        parse_filename = parse_filename_as_int
     else:
         def parse_filename(path):
+            if path.parents[1].name != 'imagenet':
+                return parse_filename_as_int(path)
             return path
     scenes = {scene: sorted(parse_filename(frame) for frame in scene.iterdir())
               for scene in Path(movie_directory).iterdir()}

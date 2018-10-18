@@ -38,7 +38,7 @@ def test_data_generators():
     m = encoder_model()
     m.summary()
     with new_model_session() as session:
-        train, test = data_generators(tests / 'dataset', m, session)
+        train, test = data_generators(m, tests / 'dataset')
         for _ in range(5):
             next(train)
             next(test)
