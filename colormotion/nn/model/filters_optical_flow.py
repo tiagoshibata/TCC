@@ -17,10 +17,9 @@ def Conv2D_default(filters, **kwargs):  # pylint: disable=invalid-name
 
 
 def mask_network(difference):
-    # TODO Scale so that range is approx. 0-1
     x = Conv2D_default(16, name='mask_conv1')(difference)
     x = Conv2D_default(24, name='mask_conv2')(x)
-    return Conv2D_default(1, name='mask_conv3')(x)
+    return Conv2D(1, 3, name='mask_conv3', padding='same', activation='sigmoid')(x)
 
 
 def warp_features(l_input_tm1, l_input, features_tm1):
