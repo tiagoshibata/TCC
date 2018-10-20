@@ -135,7 +135,7 @@ class Generator(VideoFramesGenerator):
 
 def data_generators(dataset_folder, encoder_pipe):
     flow_params = {
-        'batch_size': 4,
+        'batch_size': 6,
         'target_size': (256, 256),
     }
     # TODO Split train and test datasets
