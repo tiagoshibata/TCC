@@ -30,6 +30,8 @@ def warp_features(l_input_tm1, l_input, features_tm1):
 
 
 def interpolate(previous, new, mask):
+    features_depth = K.int_shape(previous)[-1]
+    mask = Lambda(lambda x: K.repeat_elements(x, rep=features_depth, axis=-1))(mask)
     previous = Multiply(name='interpolate_mul_previous')([previous, mask])
     ones_minus_mask = Subtract(name='interpolate_one_minus_mask')([Lambda(K.ones_like)(mask), mask])
     new = Multiply(name='interpolate_mul_new')([new, ones_minus_mask])
