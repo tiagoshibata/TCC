@@ -78,9 +78,11 @@ def encoder_eval(pipe, weights, target_size):  # pylint: disable=too-many-locals
         ab_mask_tm1_batch = []
         for scene, frame in start_frames:
             transform = random_augmentation()
-            l_tm1, ab_tm1 = augment_l_ab(image_data_generator, dataset.read_frame_lab(scene, frame, target_size), transform)
+            l_tm1, ab_tm1 = augment_l_ab(image_data_generator,
+                                         dataset.read_frame_lab(scene, frame, target_size), transform)
             if isinstance(frame, int):
-                l, ab = augment_l_ab(image_data_generator, dataset.read_frame_lab(scene, frame + 1, target_size), transform)
+                l, ab = augment_l_ab(image_data_generator,
+                                     dataset.read_frame_lab(scene, frame + 1, target_size), transform)
             else:
                 # Augment artificially
                 l, ab = augment_l_ab(image_data_generator, (l_tm1, ab_tm1), small_flow_transform())
@@ -103,7 +105,7 @@ def encoder_eval(pipe, weights, target_size):  # pylint: disable=too-many-locals
         ])
         pipe.send(
             ([np.array(warped_features), features, conv1_2norm, conv2_2norm, conv3_3norm],
-            np.array(y_batch))
+             np.array(y_batch))
         )
 
 

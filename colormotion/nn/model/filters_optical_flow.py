@@ -58,9 +58,6 @@ def interpolate_and_decode():
 
     m = Model(inputs=[warped_features, features, conv1_2norm, conv2_2norm, conv3_3norm],
               outputs=x)
-    for layer in m.layers:
-        if not layer.name.startswith('mask_conv'):
-            layer.trainable = False
     m.compile(loss='mean_squared_error', optimizer='adam')
     return m
 
