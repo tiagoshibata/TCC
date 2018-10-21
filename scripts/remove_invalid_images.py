@@ -30,18 +30,6 @@ def validate_jpg(path):
 def validate_images(dataset_path):
     print('Validating images in dataset...')
     def validate(path):
-        try:
-            str(path)
-        except UnicodeEncodeError as e:
-            print('Filename has invalid UTF-8 characters')
-            try:
-                str(path.suffix)
-            except UnicodeEncodeError as e:
-                print('Extension has invalid UTF-8 characters, skipping')
-                return
-            new_path = Path('{}.{}'.format(uuid.uuid4(), path.suffix))
-            path.rename(new_path)
-            path = new_path
         if path.suffix[1:].isnumeric():
             new_path = Path('duplicate{}.{}'.format(path.suffix, path.stem))
             path.rename(new_path)
@@ -51,7 +39,19 @@ def validate_images(dataset_path):
         try:
             if path.suffix.lower() in ('.jpeg', '.jpg'):
                 validate_jpg(path)
-            image = cv2.imread(str(path))
+            try:
+                image = cv2.imread(str(path))
+            except UnicodeEncodeError as e:
+                print('Filename has invalid UTF-8 characters')
+                try:
+                    str(path.suffix)
+                except UnicodeEncodeError as e:
+                    print('Extension has invalid UTF-8 characters, skipping')
+                    return
+                new_path = Path('{}.{}'.format(uuid.uuid4(), path.suffix))
+                path.rename(new_path)
+                path = new_path
+                image = cv2.imread(str(path))
             if image is None:
                 raise RuntimeError('Cannot read image')
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
