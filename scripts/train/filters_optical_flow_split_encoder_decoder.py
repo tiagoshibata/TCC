@@ -45,8 +45,8 @@ def small_flow_transform():
         'tx': random.uniform(-4, 4),
         'ty': random.uniform(-4, 4),
         'shear': random.uniform(-10, 10),
-        'zx': random.uniform(9, 1),
-        'zy': random.uniform(9, 1),
+        'zx': random.uniform(.9, 1),
+        'zy': random.uniform(.9, 1),
     }
 
 
