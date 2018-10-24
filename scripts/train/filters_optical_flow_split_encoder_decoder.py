@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import random
-from multiprocessing import Process, Pipe
+from multiprocessing import Pipe, Process, SimpleQueue
 from pathlib import Path
 import sys
 
@@ -56,7 +56,7 @@ def augment_l_ab(image_data_generator, l_ab, transform):
     return x[:, :, :1], x[:, :, 1:]
 
 
-def encoder_eval(pipe, weights, target_size):  # pylint: disable=too-many-locals
+def encoder_eval(queue, train_pipe, validation_pipe, weights, target_size):  # pylint: disable=too-many-locals
     tf_allow_growth()
     image_data_generator = ImageDataGenerator()
     # inputs: l_input, ab_and_mask_input
@@ -64,11 +64,11 @@ def encoder_eval(pipe, weights, target_size):  # pylint: disable=too-many-locals
     encoder = encoder_model()
     load_weights(encoder, weights, by_name=True)
     while True:
-        try:
-            start_frames = pipe.recv()
-        except EOFError:
-            pipe.close()
-            return  # end of data from parent process
+        data = queue.get()
+        if data is None:
+            # If end of data, return (will automatically GC the pipes)
+            return
+        start_frames, augment = data
         # decoder inputs: warped_features, features, conv1_2norm, conv2_2norm, conv3_3norm
         # decoder outputs: x
         y_batch = []
@@ -77,12 +77,14 @@ def encoder_eval(pipe, weights, target_size):  # pylint: disable=too-many-locals
         ab_mask_batch = []
         ab_mask_tm1_batch = []
         for scene, frame in start_frames:
-            transform = random_augmentation()
-            l_tm1, ab_tm1 = augment_l_ab(image_data_generator,
-                                         dataset.read_frame_lab(scene, frame, target_size), transform)
+            l_tm1, ab_tm1 = dataset.read_frame_lab(scene, frame, target_size)
+            if augment:
+                transform = random_augmentation()
+                l_tm1, ab_tm1 = augment_l_ab(image_data_generator, (l_tm1, ab_tm1), transform)
             if isinstance(frame, int):
-                l, ab = augment_l_ab(image_data_generator,
-                                     dataset.read_frame_lab(scene, frame + 1, target_size), transform)
+                l, ab = dataset.read_frame_lab(scene, frame + 1, target_size)
+                if augment:
+                    l, ab = augment_l_ab(image_data_generator, (l, ab), transform)
             else:
                 # Augment artificially
                 l, ab = augment_l_ab(image_data_generator, (l_tm1, ab_tm1), small_flow_transform())
@@ -103,18 +105,24 @@ def encoder_eval(pipe, weights, target_size):  # pylint: disable=too-many-locals
             np.array(l_batch),
             np.array(ab_mask_batch),
         ])
-        pipe.send(
-            ([np.array(warped_features), features, conv1_2norm, conv2_2norm, conv3_3norm],
-             np.array(y_batch))
+        x_y_batch = (
+            [np.array(warped_features), features, conv1_2norm, conv2_2norm, conv3_3norm],
+            np.array(y_batch),
         )
+        if augment:
+            train_pipe.send(x_y_batch)
+        else:
+            validation_pipe.send(x_y_batch)
 
 
 class Generator(VideoFramesGenerator):
     '''Generate groups of contiguous frames from a dataset.
 
     The generated data has inputs [warped_features, features, conv1_2norm, conv2_2norm, conv3_3norm].'''
-    def __init__(self, encoder_pipe, **kwargs):
-        self.encoder_pipe = encoder_pipe
+    def __init__(self, queue, pipe, augment, **kwargs):
+        self.queue = queue
+        self.pipe = pipe
+        self.augment = augment
         super().__init__(**kwargs)
 
     def flow_from_directory(self, root, batch_size=32, target_size=None):
@@ -128,27 +136,26 @@ class Generator(VideoFramesGenerator):
         assert self.contiguous_count == 1
         # decoder inputs: warped_features, features, conv1_2norm, conv2_2norm, conv3_3norm
         # decoder outputs: x
-        self.encoder_pipe.send(start_frames)
-        return self.encoder_pipe.recv()
+        self.queue.put((start_frames, self.augment))
+        return self.pipe.recv()
 
     def load_sample(self, scene, start_frame, target_size):
         pass  # unused
 
 
-def data_generators(dataset_folder, encoder_pipe):
+def data_generators(dataset_folder, queue, train_receive_pipe, validation_receive_pipe):
     flow_params = {
         'batch_size': 6,
         'target_size': (256, 256),
     }
-    # TODO Split train and test datasets
-    train = Generator(encoder_pipe).flow_from_directory(dataset_folder / 'train', **flow_params)
-    # test = Generator(encoder_pipe).flow_from_directory(dataset_folder / 'validation', **flow_params)
-    return train, None
+    train = Generator(queue, train_receive_pipe, True).flow_from_directory(dataset_folder / 'train', **flow_params)
+    validation = Generator(queue, validation_receive_pipe, False).flow_from_directory(dataset_folder / 'validation', **flow_params)
+    return train, validation
 
 
-def train_decoder(parent_pipe, args):
+def train_decoder(queue, train_receive_pipe, validation_receive_pipe, args):
     tf_allow_growth(.5)
-    train_generator, _ = data_generators(args.dataset, parent_pipe)
+    train_generator, validation_generator = data_generators(args.dataset, queue, train_receive_pipe, validation_receive_pipe)
     checkpoint = ModelCheckpoint('epoch-{epoch:03d}-{loss:.3f}.h5', verbose=1, period=5)
     decoder = interpolate_and_decode()
     if args.weights:
@@ -157,23 +164,28 @@ def train_decoder(parent_pipe, args):
         train_generator,
         steps_per_epoch=args.steps_per_epoch,
         epochs=args.epochs,
-        # validation_data=test_generator,
-        # validation_steps=args.validation_steps,
+        validation_data=validation_generator,
+        validation_steps=args.validation_steps,
         callbacks=[checkpoint])
     decoder.save('optical_flow_decoder.h5')
     print(fit.history)
     # score = m.evaluate(...)
-    # print('Test loss:', score[0])
-    # print('Test accuracy:', score[1])
-    parent_pipe.close()
+    # print('Validation loss:', score[0])
+    # print('Validation accuracy:', score[1])
 
 
 def main(args):
-    child_pipe, parent_pipe = Pipe()
-    encoder_process = Process(target=encoder_eval, args=(child_pipe, args.encoder_weights, (256, 256)))
+    queue = SimpleQueue()
+    train_receive_pipe, train_send_pipe = Pipe(False)
+    validation_receive_pipe, validation_send_pipe = Pipe(False)
+    encoder_process = Process(target=encoder_eval, args=(queue, train_send_pipe, validation_send_pipe, args.encoder_weights, (256, 256)))
     encoder_process.start()
 
-    train_decoder(parent_pipe, args)
+    train_decoder(queue, train_receive_pipe, validation_receive_pipe, args)
+    queue.put(None)
+    queue.close()
+    train_receive_pipe.close()
+    validation_receive_pipe.close()
     encoder_process.join()
 
 
