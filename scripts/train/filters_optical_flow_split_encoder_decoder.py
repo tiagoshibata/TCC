@@ -143,19 +143,20 @@ class Generator(VideoFramesGenerator):
         pass  # unused
 
 
-def data_generators(dataset_folder, queue, train_receive_pipe, validation_receive_pipe):
+def data_generators(dataset_folder, queue, train_recv_pipe, validation_recv_pipe):
     flow_params = {
         'batch_size': 6,
         'target_size': (256, 256),
     }
-    train = Generator(queue, train_receive_pipe, True).flow_from_directory(dataset_folder / 'train', **flow_params)
-    validation = Generator(queue, validation_receive_pipe, False).flow_from_directory(dataset_folder / 'validation', **flow_params)
+    train = Generator(queue, train_recv_pipe, True).flow_from_directory(dataset_folder / 'train', **flow_params)
+    validation = Generator(queue, validation_recv_pipe, False).flow_from_directory(
+        dataset_folder / 'validation', **flow_params)
     return train, validation
 
 
-def train_decoder(queue, train_receive_pipe, validation_receive_pipe, args):
+def train_decoder(queue, train_recv_pipe, validation_recv_pipe, args):
     tf_allow_growth(.5)
-    train_generator, validation_generator = data_generators(args.dataset, queue, train_receive_pipe, validation_receive_pipe)
+    train_generator, validation_generator = data_generators(args.dataset, queue, train_recv_pipe, validation_recv_pipe)
     checkpoint = ModelCheckpoint('epoch-{epoch:03d}-{loss:.3f}.h5', verbose=1, period=5)
     decoder = interpolate_and_decode()
     if args.weights:
@@ -176,16 +177,17 @@ def train_decoder(queue, train_receive_pipe, validation_receive_pipe, args):
 
 def main(args):
     queue = SimpleQueue()
-    train_receive_pipe, train_send_pipe = Pipe(False)
-    validation_receive_pipe, validation_send_pipe = Pipe(False)
-    encoder_process = Process(target=encoder_eval, args=(queue, train_send_pipe, validation_send_pipe, args.encoder_weights, (256, 256)))
+    train_recv_pipe, train_send_pipe = Pipe(False)
+    validation_recv_pipe, validation_send_pipe = Pipe(False)
+    encoder_process = Process(target=encoder_eval, args=(
+        queue, train_send_pipe, validation_send_pipe, args.encoder_weights, (256, 256)))
     encoder_process.start()
 
-    train_decoder(queue, train_receive_pipe, validation_receive_pipe, args)
+    train_decoder(queue, train_recv_pipe, validation_recv_pipe, args)
     queue.put(None)
     queue.close()
-    train_receive_pipe.close()
-    validation_receive_pipe.close()
+    train_recv_pipe.close()
+    validation_recv_pipe.close()
     encoder_process.join()
 
 
