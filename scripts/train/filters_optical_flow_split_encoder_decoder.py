@@ -157,7 +157,7 @@ def data_generators(dataset_folder, queue, train_recv_pipe, validation_recv_pipe
 def train_decoder(queue, train_recv_pipe, validation_recv_pipe, args):
     tf_allow_growth(.5)
     train_generator, validation_generator = data_generators(args.dataset, queue, train_recv_pipe, validation_recv_pipe)
-    checkpoint = ModelCheckpoint('epoch-{epoch:03d}-{loss:.3f}.h5', verbose=1, period=5)
+    checkpoint = ModelCheckpoint('epoch-{epoch:03d}-{loss:.3f}-{val_loss:.3f}.h5', verbose=1, period=5)
     decoder = interpolate_and_decode()
     if args.weights:
         load_weights(decoder, args.weights, by_name=True)
