@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument('video', help='video file or webcam id')
     return parser.parse_args()
 
-mask_coverage = .00016
+mask_coverage = 0
 
 
 def main(args):  # pylint: disable=too-many-locals
@@ -43,7 +43,13 @@ def main(args):  # pylint: disable=too-many-locals
     if args.save:
         truth = random.choice(['L', 'R'])
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        writer = cv2.VideoWriter('output_{}_{}.avi'.format(video, truth), fourcc, 30.0, (512, 256))
+        if isinstance(video, int):
+            stem = video
+        else:
+            stem = Path(video).stem
+        filename = 'output_{}_{}.avi'.format(stem, truth)
+        print('Saving to {}'.format(filename))
+        writer = cv2.VideoWriter(filename, fourcc, 30.0, (512, 256))
 
     def on_trackbar(val):
         global mask_coverage
@@ -51,13 +57,14 @@ def main(args):  # pylint: disable=too-many-locals
 
     cv2.namedWindow('ColorMotion')
     cv2.createTrackbar('Mask percentage * 0.1%', 'ColorMotion' , 16, 100, on_trackbar)
+    on_trackbar(16)
 
     l_tm1 = None
     prev = None
     interpolated_features_tm1 = None
     prev_mask = None
-    while True:
-    # for _ in range(300):
+    # while True:
+    for _ in range(300):
         success, frame = capture.read()
         if not success:
             break
@@ -103,7 +110,6 @@ def main(args):  # pylint: disable=too-many-locals
         l_tm1 = l
 
     if writer:
-        print('release')
         writer.release()
 
 
