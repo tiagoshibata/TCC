@@ -6,7 +6,7 @@ def binary_mask(size, ones_ratio):
 
 
 def apply_mask(data, ones_ratio):
-    '''Return a (mask, masked_data) tuple.
+    '''Return a (masked_data, mask) tuple.
 
     data must be in HWC format.'''
     assert len(data.shape) == 3 and data.shape[2] == 2  # HWC
