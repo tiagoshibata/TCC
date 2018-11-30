@@ -50,6 +50,8 @@ def main(args):  # pylint: disable=too-many-locals
         filename = 'output_{}_{}.avi'.format(stem, truth)
         print('Saving to {}'.format(filename))
         writer = cv2.VideoWriter(filename, fourcc, 30.0, (512, 256))
+        truth = cv2.VideoWriter('truth_{}'.format(filename), fourcc, 30.0, (256, 256))
+        colormotion = cv2.VideoWriter('colormotion_{}'.format(filename), fourcc, 30.0, (256, 256))
 
     def on_trackbar(val):
         global mask_coverage
@@ -100,6 +102,8 @@ def main(args):  # pylint: disable=too-many-locals
                 output = (bgr, frame)
             output = np.concatenate(output, axis=1)
             writer.write(output)
+            truth.write(frame)
+            colormotion.write(bgr)
         cv2.imshow('Original stream', frame)
         cv2.imshow('ColorMotion', bgr)
         key = cv2.waitKey(1) & 255
@@ -111,6 +115,8 @@ def main(args):  # pylint: disable=too-many-locals
 
     if writer:
         writer.release()
+        truth.release()
+        colormotion.release()
 
 
 if __name__ == '__main__':
