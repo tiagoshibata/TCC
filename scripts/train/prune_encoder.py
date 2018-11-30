@@ -91,7 +91,7 @@ class GeneratorToObject(object):
 def prune(args):
     _, validation_generator = data_generators(args.dataset)
     validation_generator = GeneratorToObject(validation_generator)
-    validation_generator.n = 200
+    validation_generator.n = 250
     validation_generator.batch_size = 8
     encoder = encoder_model()
     load_weights(encoder, args.weights, by_name=True)
@@ -111,7 +111,7 @@ def prune(args):
         # Clean up tensorflow session after pruning and re-load model
         # checkpoint_name = ('inception_flowers_pruning_' + str(percent_pruned)
         #                    + 'percent')
-        output = str(args.weights.parent / 'compressed_{}'.format(args.weights.name))
+        output = str(args.weights.parent / 'compressed_{}%_{}'.format(percent_pruning, args.weights.name))
         print('Saving to {}'.format(output))
         model.save(output)
         # del model
