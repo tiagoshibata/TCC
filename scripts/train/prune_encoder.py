@@ -113,6 +113,7 @@ def prune(args):
         #                    + 'percent')
         output = str(args.weights.parent / 'compressed_{}%_{}'.format(percent_pruning, args.weights.name))
         print('Saving to {}'.format(output))
+        model.compile(loss='mean_squared_error', optimizer='adam')
         model.save(output)
         # del model
         # K.clear_session()
