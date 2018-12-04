@@ -11,7 +11,7 @@ def parse_args():
 
 
 def summary(args):
-    m = load_model(args.path)
+    m = load_model(args.model)
     m.summary()
     if args.plot:
         from keras.utils import plot_model
