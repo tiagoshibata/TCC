@@ -17,33 +17,53 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Evaluate a colorization model using optical flow for coherent colorization of videos.')
     parser.add_argument('--save', action='store_true', help='save results to a video file')
+    parser.add_argument('--ui', action='store_true', help='show UI')
     parser.add_argument('encoder', type=Path, help='encoder weights')
     parser.add_argument('decoder', type=Path, help='decoder weights')
-    parser.add_argument('dataset', type=directory_path, help='dataset directory')
     parser.add_argument('video', help='video file or webcam id')
     return parser.parse_args()
 
-mask_coverage = 0
+mask_coverage = 16 / 100000
+
+
+def capture_generator(capture):
+    while True:
+        success, frame = capture.read()
+        if not success:
+            return
+        yield frame
+
+
+def directory_generator(path):
+    frames = sorted(Path(path).iterdir())
+    for filename in frames:
+        image = cv2.imread(str(filename))
+        if image is not None:
+            yield image
+
+
+def open_video(video):
+    if video.isdigit():
+        # Ints are threated as camera indexes
+        video = int(video)
+    elif Path(video).is_dir():
+        return directory_generator(video)
+    return capture_generator(cv2.VideoCapture(video))
 
 
 def main(args):  # pylint: disable=too-many-locals
-    scenes = dataset.get_all_scenes(args.dataset)
     m = model()
     load_weights(m, args.encoder, by_name=True)
     load_weights(m, args.decoder, by_name=True)
 
     video = args.video
-    try:
-        video = int(video)
-    except ValueError:
-        pass
-    capture = cv2.VideoCapture(video)
+    capture = open_video(video)
 
     writer = None
     if args.save:
         truth = random.choice(['L', 'R'])
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        if isinstance(video, int):
+        if video.isdigit():
             stem = video
         else:
             stem = Path(video).stem
@@ -57,19 +77,17 @@ def main(args):  # pylint: disable=too-many-locals
         global mask_coverage
         mask_coverage = val / 100000
 
-    cv2.namedWindow('ColorMotion')
-    cv2.createTrackbar('Mask percentage * 0.1%', 'ColorMotion' , 16, 100, on_trackbar)
-    on_trackbar(16)
+    if args.ui:
+        cv2.namedWindow('ColorMotion')
+        cv2.createTrackbar('Mask percentage * 0.1%', 'ColorMotion' , 16, 100, on_trackbar)
+        on_trackbar(16)
 
     l_tm1 = None
     prev = None
     interpolated_features_tm1 = None
     prev_mask = None
     # while True:
-    for _ in range(300):
-        success, frame = capture.read()
-        if not success:
-            break
+    for _, frame in zip(range(300), capture):
         frame = cv2.resize(frame, (256, 256), interpolation=cv2.INTER_AREA)
         l, ab = dataset.bgr_to_lab((frame / 255).astype(np.float32))
         if l_tm1 is None:
@@ -104,8 +122,9 @@ def main(args):  # pylint: disable=too-many-locals
             writer.write(output)
             truth.write(frame)
             colormotion.write(bgr)
-        cv2.imshow('Original stream', frame)
-        cv2.imshow('ColorMotion', bgr)
+        if args.ui:
+            cv2.imshow('Original stream', frame)
+            cv2.imshow('ColorMotion', bgr)
         key = cv2.waitKey(1) & 255
         if key == ord('q'):
             break
