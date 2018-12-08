@@ -2,7 +2,6 @@
 import random
 from multiprocessing import Pipe, Process, SimpleQueue
 from pathlib import Path
-import sys
 
 from keras import backend as K
 from keras.callbacks import ModelCheckpoint
@@ -125,7 +124,7 @@ class Generator(VideoFramesGenerator):
         self.augment = augment
         super().__init__(**kwargs)
 
-    def flow_from_directory(self, root, batch_size=32, target_size=None):
+    def flow_from_directory(self, root, batch_size=32, target_size=None):  # pylint: disable=arguments-differ
         contiguous_frames = self.get_contiguous_frames(dataset.get_all_scenes(root, names_as_int=False))
         print('Dataset {} has {} contiguous subscenes'.format(root, len(contiguous_frames)))
         while True:

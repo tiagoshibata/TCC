@@ -1,25 +1,20 @@
 #!/usr/bin/env python3
 import argparse
-import math
 from pathlib import Path
 import sys
 
-import keras.backend as K
-from keras.models import Model, load_model
-from keras.preprocessing.image import ImageDataGenerator
 from kerassurgeon.identify import get_apoz
 from kerassurgeon import Surgeon
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 
 from colormotion.argparse import directory_path
 from colormotion.nn.layers import load_weights
 
 base_dir = Path(__file__).resolve().parent
 sys.path.append(base_dir)
-from filters_optical_flow_split_encoder_decoder import encoder_model
-from user_guided import data_generators
+from filters_optical_flow_split_encoder_decoder import encoder_model  # pylint: disable=wrong-import-position
+from user_guided import data_generators  # pylint: disable=wrong-import-position,no-name-in-module
 
 START = None
 END = None
@@ -52,7 +47,7 @@ def get_model_apoz(model, generator):
         if layer.__class__.__name__ == 'Conv2D':
             print(layer.name)
             apoz.extend([(layer.name, i, value) for (i, value)
-                          in enumerate(get_apoz(model, layer, generator))])
+                         in enumerate(get_apoz(model, layer, generator))])
 
     layer_name, index, apoz_value = zip(*apoz)
     apoz_df = pd.DataFrame({'layer': layer_name, 'index': index,
@@ -69,18 +64,21 @@ def get_total_channels(model):
     return channels
 
 
-class GeneratorToObject(object):
+class GeneratorToObject():
     def __init__(self, generator):
         self.generator = generator
+        # Attributes used by kerassurgeon
+        self.n = 250
+        self.batch_size = 8
 
     def __call__(self):
         for x, y in self.generator:
             yield np.array(x), y
 
-    def __iter__ (self):
+    def __iter__(self):
         return self
 
-    def __next__ (self):
+    def __next__(self):
         x, y = next(self.generator)
         print([i.shape for i in x])
         print(y.shape)
@@ -91,49 +89,43 @@ class GeneratorToObject(object):
 def prune(args):
     _, validation_generator = data_generators(args.dataset)
     validation_generator = GeneratorToObject(validation_generator)
-    validation_generator.n = 250
-    validation_generator.batch_size = 8
     encoder = encoder_model()
     load_weights(encoder, args.weights, by_name=True)
     percent_pruned = 0
-    percent_pruning = 20
+    percent_pruning = 80
     # while percent_pruned <= .3:
-    if True:
-        total_channels = get_total_channels(encoder)
-        n_channels_delete = int(percent_pruning // 100 * total_channels)
-        # Prune the model
-        apoz_df = get_model_apoz(encoder, validation_generator)
-        # percent_pruned += percent_pruning
-        print('pruning up to ', str(percent_pruned),
-              '% of the original model weights')
-        model = prune_model(encoder, apoz_df, n_channels_delete)
+    total_channels = get_total_channels(encoder)
+    n_channels_delete = int(percent_pruning // 100 * total_channels)
+    # Prune the model
+    apoz_df = get_model_apoz(encoder, validation_generator)
+    # percent_pruned += percent_pruning
+    print('pruning up to {}% of the original model weights'.format(percent_pruned))
+    model = prune_model(encoder, apoz_df, n_channels_delete)
 
-        # Clean up tensorflow session after pruning and re-load model
-        # checkpoint_name = ('inception_flowers_pruning_' + str(percent_pruned)
-        #                    + 'percent')
-        output = str(args.weights.parent / 'compressed_{}%_{}'.format(percent_pruning, args.weights.name))
-        print('Saving to {}'.format(output))
-        model.compile(loss='mean_squared_error', optimizer='adam')
-        model.save(output)
-        # del model
-        # K.clear_session()
-        # tf.reset_default_graph()
-        # model = load_model(output_dir + checkpoint_name + '.h5')
+    # Clean up tensorflow session after pruning and re-load model
+    output = str(args.weights.parent / 'compressed_{}%_{}'.format(percent_pruning, args.weights.name))
+    print('Saving to {}'.format(output))
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    model.save(output)
+    # del model
+    # K.clear_session()
+    # tf.reset_default_graph()
+    # model = load_model(output_dir + checkpoint_name + '.h5')
 
-        # # Re-train the model
-        # model.compile(loss='categorical_crossentropy',
-        #               optimizer=SGD(lr=1e-4, momentum=0.9),
-        #               metrics=['accuracy'])
-        # checkpoint_name = ('inception_flowers_pruning_' + str(percent_pruned)
-        #                    + 'percent')
-        # csv_logger = CSVLogger(output_dir + checkpoint_name + '.csv')
-        # model.fit_generator(train_generator,
-        #                     steps_per_epoch=train_steps,
-        #                     epochs=epochs,
-        #                     validation_data=validation_generator,
-        #                     validation_steps=val_steps,
-        #                     workers=4,
-        #                     callbacks=[csv_logger])
+    # # Re-train the model
+    # model.compile(loss='categorical_crossentropy',
+    #               optimizer=SGD(lr=1e-4, momentum=0.9),
+    #               metrics=['accuracy'])
+    # checkpoint_name = ('inception_flowers_pruning_' + str(percent_pruned)
+    #                    + 'percent')
+    # csv_logger = CSVLogger(output_dir + checkpoint_name + '.csv')
+    # model.fit_generator(train_generator,
+    #                     steps_per_epoch=train_steps,
+    #                     epochs=epochs,
+    #                     validation_data=validation_generator,
+    #                     validation_steps=val_steps,
+    #                     workers=4,
+    #                     callbacks=[csv_logger])
 
     # Evaluate the final model performance
     # loss = model.evaluate_generator(validation_generator,

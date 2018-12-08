@@ -23,8 +23,10 @@ def data_generators(dataset_folder):
         'target_size': (256, 256),
     }
     # TODO Split train and test datasets
-    train = VideoFramesWithLabStateGenerator(contiguous_count=0).flow_from_directory(dataset_folder / 'train', **flow_params)
-    test = VideoFramesWithLabStateGenerator(contiguous_count=0).flow_from_directory(dataset_folder / 'validation', **flow_params)
+    train = VideoFramesWithLabStateGenerator(contiguous_count=0).flow_from_directory(
+        dataset_folder / 'train', **flow_params)
+    test = VideoFramesWithLabStateGenerator(contiguous_count=0).flow_from_directory(
+        dataset_folder / 'validation', **flow_params)
     return train, test
 
 

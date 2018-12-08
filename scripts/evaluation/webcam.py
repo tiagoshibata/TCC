@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 
 from colormotion import dataset
-from colormotion.argparse import directory_path
 from colormotion.nn.layers import load_weights
 from colormotion.nn.model.filters_optical_flow import model, warp_features
 from colormotion.user_guided import ab_and_mask_matrix
@@ -22,8 +21,6 @@ def parse_args():
     parser.add_argument('decoder', type=Path, help='decoder weights')
     parser.add_argument('video', help='video file or webcam id')
     return parser.parse_args()
-
-mask_coverage = 16 / 100000
 
 
 def capture_generator(capture):
@@ -51,7 +48,7 @@ def open_video(video):
     return capture_generator(cv2.VideoCapture(video))
 
 
-def main(args):  # pylint: disable=too-many-locals
+def main(args):  # pylint: disable=too-many-locals,too-many-statements
     m = model()
     load_weights(m, args.encoder, by_name=True)
     load_weights(m, args.decoder, by_name=True)
@@ -73,14 +70,14 @@ def main(args):  # pylint: disable=too-many-locals
         truth = cv2.VideoWriter('truth_{}'.format(filename), fourcc, 30.0, (256, 256))
         colormotion = cv2.VideoWriter('colormotion_{}'.format(filename), fourcc, 30.0, (256, 256))
 
-    def on_trackbar(val):
-        global mask_coverage
-        mask_coverage = val / 100000
+    def on_trackbar(value):
+        on_trackbar.value = value / 100000
+
+    on_trackbar(16)
 
     if args.ui:
         cv2.namedWindow('ColorMotion')
-        cv2.createTrackbar('Mask percentage * 0.1%', 'ColorMotion' , 16, 100, on_trackbar)
-        on_trackbar(16)
+        cv2.createTrackbar('Mask percentage * 0.1%', 'ColorMotion', 16, 100, on_trackbar)
 
     l_tm1 = None
     prev = None
@@ -93,19 +90,19 @@ def main(args):  # pylint: disable=too-many-locals
         if l_tm1 is None:
             # Set warped_features = encoded_features on the first frame
             _, warped_features, _ = m.predict([
-                np.array([ab_and_mask_matrix(ab, mask_coverage)]), np.array([l]), np.empty((1, 32, 32, 512))], verbose=1)
+                np.array([ab_and_mask_matrix(ab, on_trackbar.value)]), np.array([l]), np.empty((1, 32, 32, 512))])
         else:
             warped_features = warp_features(l_tm1, l, interpolated_features_tm1)[np.newaxis]
 
-        mask = np.array([ab_and_mask_matrix(ab, mask_coverage)])
+        mask = np.array([ab_and_mask_matrix(ab, on_trackbar.value)])
         if prev_mask is not None:
-            prev_mask[:, :, 2] *= .8
+            prev_mask[:, :, 2] *= .8  # pylint: disable=unsupported-assignment-operation
             # mask_valid = mask[:, :, :, 2:3]
             # condition = np.stack((mask_valid, ) * 3, axis=-1)
             # mask = np.where(condition, mask, prev_mask)
             mask += prev_mask
         x, _, interpolated_features = m.predict([
-            np.array([ab_and_mask_matrix(ab, mask_coverage)]), np.array([l]), warped_features], verbose=1)
+            np.array([ab_and_mask_matrix(ab, on_trackbar.value)]), np.array([l]), warped_features])
         prev_mask = mask
 
         ab = x[0]
@@ -114,28 +111,18 @@ def main(args):  # pylint: disable=too-many-locals
         prev = ab
         bgr = np.round(255 * dataset.lab_to_bgr(l, ab)).astype('uint8')
         if writer:
-            if truth == 'L':
-                output = (frame, bgr)
-            else:
-                output = (bgr, frame)
-            output = np.concatenate(output, axis=1)
+            output = np.concatenate((bgr, frame), axis=1)
             writer.write(output)
             truth.write(frame)
             colormotion.write(bgr)
         if args.ui:
             cv2.imshow('Original stream', frame)
             cv2.imshow('ColorMotion', bgr)
-        key = cv2.waitKey(1) & 255
-        if key == ord('q'):
-            break
+            if (cv2.waitKey(1) & 255) == ord('q'):
+                break
 
         interpolated_features_tm1 = interpolated_features[0]
         l_tm1 = l
-
-    if writer:
-        writer.release()
-        truth.release()
-        colormotion.release()
 
 
 if __name__ == '__main__':

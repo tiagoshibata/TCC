@@ -37,7 +37,7 @@ def test_data_generators():
     from train.filters_optical_flow import data_generators  # pylint: disable=import-error
     m = encoder_model()
     m.summary()
-    with new_model_session() as session:
+    with new_model_session():
         train, test = data_generators(m, tests / 'dataset')
         for _ in range(5):
             next(train)
