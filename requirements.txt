@@ -30,7 +30,7 @@ pytest-pylint==0.12.1
 python-dateutil==2.7.3
 pytz==2018.5
 PyWavelets==0.5.2
-PyYAML==3.13
+PyYAML==5.1
 scikit-image==0.14.0
 scipy==1.1.0
 six==1.11.0
